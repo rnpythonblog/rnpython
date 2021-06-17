@@ -6,7 +6,7 @@
 
 main:
   - name: Blog
-    url: '#posts'
+    url: '/post'
     weight: 20
   - name : "My Courses"  # Title of the link.
     url : "courses/"  # Widget Page folder name.

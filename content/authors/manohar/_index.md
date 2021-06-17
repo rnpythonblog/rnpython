@@ -12,12 +12,13 @@ education:
 email: ""
 highlight_name: false
 interests:
+- Data Analysis
+- Machine Learning
 - Artificial Intelligence
 - Computational Linguistics
-- Information Retrieval
 
 
-role: Data Analyst
+role: Data Science, Analytics and Data Engineering
 social:
 - icon: envelope
   icon_pack: fas
@@ -27,21 +28,20 @@ social:
   icon: twitter
   icon_pack: fab
   label: Follow me on Twitter
-  link: https://twitter.com/mmulchandani
+  link: https://twitter.com/rnpython
 - icon: github
   icon_pack: fab
-  link: https://github.com/mmulchandani
+  link: https://github.com/rnpythonblog
 - icon: linkedin
   icon_pack: fab
-  link: https://www.linkedin.com/
+  link: https://in.linkedin.com/in/manohar-mulchandani-413825
 superuser: true
 title: Manohar Mulchandani
 ---
 
-Manohar Mulchandani is a Data Scientist, Data Engineer and he likes to work with data. He wishes to make Data Analytics accessible. He also wants to make programming accessible.
+Manohar Mulchandani is a Data Scientist, Analyst Data Engineer, depending on the nature of the project. He would like to make Data Analytics, and in general, Programming accessible to everyone.
 
-He has successfully completed a Digital Transformation project. He has also consulted and assisted clients in deploying Predictive Models.
+He has with over 20 years of experience, leading teams to successfully execute and deploy, business critical IT projects to global clients.
 
-He comes with over 20 years of experience, leading teams to successfully execute and deploy bespoke development projects.
+He has successfully executed Digital Transformation projects for clients. He has also successfully help clients develop and deploy Machine Learning models.
 
-{{< icon name="download" pack="fas" >}} Download my {{< staticref "uploads/demo_resume.pdf" "newtab" >}}resumé{{< /staticref >}}.

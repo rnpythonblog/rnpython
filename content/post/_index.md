@@ -1,8 +1,6 @@
 ---
-cms_exclude: true
-header:
-  caption: ""
-  image: ""
-title: Posts
-view: 2
+title: ""
+subtitle: ""
+summary: List of Blogs Posts
+type: widget_page
 ---
