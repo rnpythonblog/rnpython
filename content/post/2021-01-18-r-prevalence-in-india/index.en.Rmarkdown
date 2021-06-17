@@ -1,0 +1,1395 @@
+---
+title: R Prevalence in India
+author: Manohar Mulchandani
+date: '2021-01-18'
+categories: []
+tags:
+  - R
+  - Python
+  - India
+keywords:
+  - tech
+summary: "How does R fare vis-a-vis Python in India. This post explores this question by using data from Kaggle MLDSS Survery 2020."
+subtitle: "How does R fare vis-a-vis Python in India"
+---
+
+<style>
+body {
+    background-color:cornsilk;
+}
+</style>
+
+## Introduction
+This blog post analyzes the prevalence and use of R in India. The analysis is based on the global Kaggle Machine Learning and Data Science Survey 2020 (KMLDSS 2020) conducted in October 2020. [Kaggle](https://www.kaggle.com) is an online community of data scientists and machine learning practitioners. The survey data contains responses from 20036 data scientists and machine learning practitioners from 55 countries. An [executive summary](https://www.kaggle.com/kaggle-survey-2020) is available on the Kaggle website.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE,
+                      message = FALSE)
+```
+
+```{r, echo=FALSE}
+### Library Imports
+library(ggplot2)
+library(dplyr, quietly = T)
+library(tibble)
+library(tidyr)
+library(stringr)
+library(patchwork)
+library(scales)
+```
+
+```{r, echo=FALSE}
+### Library Imports
+library(ggplot2)
+library(dplyr, quietly = T)
+library(tibble)
+library(tidyr)
+library(stringr)
+library(patchwork)
+```
+
+```{r, echo=FALSE}
+#### Read in the raw data
+mldss_df<-read.csv("/Users/manohar/Documents/Kaggle - 2020 MLDSS/data/kaggle_survey_2020_responses.csv")
+mldss_2019_df<-read.csv("/Users/manohar/Documents/Kaggle - 2020 MLDSS/data/multiple_choice_responses.csv")
+mldss_2018_df<-read.csv("/Users/manohar/Documents/Kaggle - 2020 MLDSS/data/multipleChoiceResponses.csv")
+
+#### Remove the question text
+mldss_df<-mldss_df[-1,]
+mldss_2019_df<-mldss_2019_df[-1,]
+mldss_2018_df<-mldss_2018_df[-1,]
+
+num_worldwide_respondents<-nrow(mldss_df)
+
+mldss_india_df<-mldss_df %>% filter(Q3 == "India")
+num_india_respondents<-nrow(mldss_india_df)
+
+mldss_2019_india_df<-mldss_2019_df %>% filter(Q3 == 'India')
+num_2019_india_respondents<-nrow(mldss_2019_india_df)
+
+mldss_2018_india_df<-mldss_2018_df %>% filter(Q3 == 'India')
+num_2018_india_respondents<-nrow(mldss_2018_india_df)
+```
+
+The analysis is organized in three parts:
+
+1. We first contextualize the Data Science practice in India within the global scenario, vis-a-vis R and Python.
+2. We then compare the prevalence of R and Python among Data Science professionals in India.
+3. We finally deep dive into the practice of R in India.
+
+In general, we will be working with the 2020 survey data. However, at places, it is insightful to look at data from past Kaggle MLDSS surveys, especially to study trends. We will use survey data from 2018 and 2019.
+
+A companion [Shiny app](https://manohar.shinyapps.io/kaggle_mldss/) reproduces all the plots in this blog post, to enable a similar analysis for Top10 countries with most number of respondents.
+
+## Part I: India in the Global Context
+The two charts below illustrate participation in the survey by data science and machine learning professions residing in India.
+
+The bar graph on the left shows the Top 10 countries with most number of respondents (in percentage terms). The size of the bars in the graph is proportional to the percentage of respondents from that country. India has the maximum number of respondents at 29.2% followed by United States at 11.2%. Together, the Top 10 countries represent over half of the respondents.
+
+Since R and Python are the two most popular languages used by data scientists and machine learning practitioners, its instructive to see how the Top 10 countries fare in terms of R versus Python prevalence.
+
+We compare the percentage of respondents for R and Python and as we can see from the chart on the right, Python percentages vary within a narrow range of 77% - 83%, but the R proportions vary in a wide range: 8% - 32%. As far as R is concerned, India is somewhere in the middle of this range, while USA tops the list in terms of percentage of its respondents who use R.
+
+**Note that some of the respondents program in Python as well as R. So the total percentages for a country may add up to more than 100%.**
+
+```{r, fig.width = 16,fig.height = 6,echo = FALSE}
+top_10_df<-mldss_df %>%
+  group_by(Q3) %>%
+  summarize(NumberOfRespondents = n()) %>%
+  mutate(PercentageOfRespondents = round(100*NumberOfRespondents/sum(NumberOfRespondents),1)) %>%
+  filter(Q3 != "Other") %>%
+  slice_max(NumberOfRespondents,n=10)
+
+top_10_countries<-top_10_df$Q3
+
+p1_t10<-top_10_df %T>%
+  { t10_total_pct <<- sum(.['PercentageOfRespondents']) } %>%
+  mutate(Q3 = case_when(
+    Q3 == "United Kingdom of Great Britain and Northern Ireland"~"UK & NI",
+    Q3 == "United States of America"~"USA",
+    TRUE~Q3
+  )) %>%
+  ggplot(aes(x=reorder(Q3,-NumberOfRespondents),y=PercentageOfRespondents)) +
+  geom_col(fill = '#377EBB') +
+  labs(title = "Top 10 Countries in terms of Percentage of Respondents",
+       subtitle = paste("They represent",
+                        paste0(t10_total_pct,"%"),
+                        "of respondents", sep = " ")) +
+  ylim(c(0,max(top_10_df$PercentageOfRespondents) + 3)) +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 16, color = 'black'),
+        plot.subtitle=element_text(size=14, face="italic", color="black"),
+        axis.title=element_blank(),
+        axis.text.x=element_text(angle=0,size=14, color = 'black'),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "none") +
+  geom_text(aes(label=paste0(PercentageOfRespondents,"%")), size = 5, vjust=-0.5) +
+  scale_fill_brewer(palette='Set1')
+
+t10<-top_10_countries %>%
+  str_replace("United States of America","USA") %>%
+  str_replace("United Kingdom of Great Britain and Northern Ireland","UK & NI")
+
+p2_t10<-mldss_df %>%
+  filter(Q3 %in% top_10_countries) %>%
+  select("Q3","Q7_Part_1","Q7_Part_2") %>%
+  mutate(Q7_Part_1 = ifelse(Q7_Part_1 == "", "PythonNotSpecified", Q7_Part_1)) %>%
+  mutate(Q7_Part_2 = ifelse(Q7_Part_2 == "", "RNotSpecified", Q7_Part_2)) %>%
+  pivot_longer(cols = c("Q7_Part_1","Q7_Part_2"),names_to = c("PLQuestion"),
+               values_to = c("PL")) %>%
+  group_by(Q3,PL) %>%
+  summarize(Count = n()) %>%
+  pivot_wider(names_from = PL, values_from = Count) %>%
+  rowwise() %>%
+  mutate(Total = sum(c(PythonNotSpecified,Python))) %>%
+  mutate(PythonPct = round(100*Python/Total)) %>%
+  mutate(RPct = round(100*R/Total)) %>%
+    mutate(Q3 = case_when(
+    Q3 == "United Kingdom of Great Britain and Northern Ireland"~"UK & NI",
+    Q3 == "United States of America"~"USA",
+    TRUE~Q3
+  )) %>%
+  mutate(Q3 = factor(Q3, levels = t10)) %>%
+  select(Q3,PythonPct,RPct) %>%
+  rename(Python = PythonPct, R = RPct) %>%
+  pivot_longer(cols = c('Python','R'), names_to = "Language", values_to = "Percentage") %T>%
+  { max_pct <<- max(.['Percentage']) } %>%
+  ggplot(aes(x=Q3, y = Percentage,fill = Language)) + geom_col(position = 'dodge') +
+  ylim(c(0,max_pct + 10)) +
+  labs(title = str_wrap("Percentage of Respondents programming in R and Python in Top 10 Countries",50),
+        caption = "UK & NI = United Kingdom of Great Britain and Northern Ireland") +
+    theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 16, color = 'black'),
+        plot.caption = element_text(size = 14, color = 'black'),
+        axis.title = element_blank(),
+        axis.text.x=element_text(angle=0,size=14, color = 'black'),
+        axis.text.y=element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = 'bottom',
+        legend.title = element_blank(),
+        legend.background = element_rect(fill = 'cornsilk'),
+        legend.text = element_text(size = 16)) +
+  # scale_y_continuous(breaks = seq(0, 100, 10)) +
+  geom_text(aes(label=paste0(Percentage,"%")), 
+            position=position_dodge(width=1), size = 5, vjust=-0.5) +
+  scale_fill_brewer(palette='Set1')
+
+p1_t10 + p2_t10
+```
+
+### Programming Language Choices
+Even though R and Python are considered the top programming languages for data science and machine learning practitioners, the survey respondents come from a wide variety of backgrounds and use multiple languages. While one would expect to see R and Python as the top 2 languages of the respondents, the reality is quite different.
+
+As can be seen from the bar graph on the left below, globally Python is the top choice and R is at the 3rd spot (not quite at #2, as we expect it to be.) The results for India are even more surprising: R drops to the 6th spot.
+
+```{r, fig.width=16, fig.height = 6, echo = FALSE}
+pl_world<-mldss_df %>%
+  select(contains("Q7_")) %>%
+  pivot_longer(cols = names(.), names_to = "PLQuestion", values_to = "PL") %>%
+  select(PL) %>%
+  filter(PL != "") %>%
+  group_by(PL) %>% summarize("NumberOfResponses" = n()) %>%
+  arrange(desc(NumberOfResponses))  %>%
+  mutate(Rank = seq(1,nrow(.))) %>%
+  mutate(Percentage = round(100*NumberOfResponses/num_worldwide_respondents)) %T>%
+  { max_ww_pct<<- max(.["Percentage"]) } %>%
+  mutate(PL = as.factor(PL)) %>%
+  ggplot(aes(x=reorder(PL,-Percentage),y=Percentage,
+             fill = ifelse(PL %in% c('R','Python'), 'Highlight','NoHighlight'))) +
+  geom_col() +
+  labs(y = "Percentage of Respondents",
+       title = "Global Programming Language Preferences") +
+  ylim(c(0,max_ww_pct + 3)) +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 18),
+        axis.title.x=element_blank(),
+        axis.text.x=element_text(angle=45, hjust=1,size=16, color = 'black'),
+        axis.text.y=element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "none") +
+  geom_text(aes(label=paste0(Percentage,"%")), vjust=-0.5,size = 5) +
+   scale_fill_brewer(palette='Set1')
+
+pl_counts_df<-mldss_india_df %>%
+  select(contains("Q7_")) %>%
+  pivot_longer(cols = names(.), names_to = "PLQuestion", values_to = "PL") %>%
+  select(PL) %>%
+  filter(PL != "") %>%
+  group_by(PL) %>% summarize("NumberOfResponses" = n()) %>%
+  arrange(desc(NumberOfResponses))  %>%
+  mutate(Rank = seq(1,nrow(.))) %>%
+  mutate(Percentage = round(100*NumberOfResponses/num_india_respondents))
+
+pl_india<-pl_counts_df %>%
+  mutate(PL = as.factor(PL)) %>%
+  ggplot(aes(x=reorder(PL,-Percentage),y=Percentage,
+             fill = ifelse(PL %in% c('R','Python'), 'Highlight','NoHighlight'))) +
+  geom_col() +
+  labs(y = "Percentage of Respondents",
+       title = "India Programming Language Preferences") +
+  ylim(c(0,max(pl_counts_df$Percentage) + 3)) +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 18),
+        axis.title.x=element_blank(),
+        axis.text.x=element_text(angle=45, hjust=1,size=16, color = 'black'),
+        axis.text.y=element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "none") +
+  geom_text(aes(label=paste0(Percentage,"%")), vjust=-0.5, size = 5) +
+   scale_fill_brewer(palette='Set1')
+
+pl_world + pl_india
+```
+
+### R and Python 
+We now switch focus to just R and Python. 
+
+Earlier, in the context of Top10 countries, we saw the relative percentages of respondents who program in R versus Python. Some of those programmers use both R and Python. To highlight real differences between the Python and R programmers, the subsequent analysis will split the respondents into the following three types:
+
+1. Those who program only in Python
+2. Those that program only in R
+3. Those that program in Python as well as R (Python_n_R)
+
+We ignore respondents that do not program in R or Python.
+
+The plots below show relative percentages of these three types of respondents in India and compare them with global percentages.
+
+```{r, fig.width=16, fig.height = 6, echo=FALSE}
+p1<-mldss_df %>%
+  select(contains("Q7_")) %>%
+  mutate(Python_R_Choice = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  group_by(Python_R_Choice) %>%
+  summarize(Count = n()) %>%
+  mutate(Percentage = 100*round(Count/sum(Count),2)) %T>%
+  { max_global_y <<- max(.["Percentage"])} %>%
+  filter(Python_R_Choice != 'No') %>%
+  ggplot(aes(x=Python_R_Choice,y=Percentage, fill = Python_R_Choice)) +
+  geom_col() +
+  ylim(c(0,max_global_y + 5)) +
+  labs(y="Percentage of Respondents", x = "Language",
+      title = "Global Preferences : R and Python") +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 18),
+        axis.title.x = element_blank(),
+        axis.text = element_text(size = 16, color = 'black'),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.title = element_blank(),
+        legend.position = 'bottom',
+        legend.background = element_rect(fill = 'cornsilk'),
+        legend.text = element_text(size = 16)) +
+  geom_text(aes(label=paste(Percentage,"%",sep="")), vjust = -0.5, size = 6) +
+  scale_fill_brewer(palette='Set1')
+
+p2<-mldss_india_df %>%
+  select(contains("Q7_")) %>%
+  mutate(Python_R_Choice = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  group_by(Python_R_Choice) %>%
+  summarize(Count = n()) %>%
+  mutate(Percentage = 100*round(Count/sum(Count),2)) %T>%
+  { max_india_y <<- max(.["Percentage"])} %>%
+  filter(Python_R_Choice != 'No') %>%
+  ggplot(aes(x=Python_R_Choice,y=Percentage, fill = Python_R_Choice)) +
+  geom_col() +
+  ylim(c(0,max_india_y + 5)) +
+  labs(y="Percentage of Respondents", x = "Language",
+      title = "India Preferences : R and Python") +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 18),
+        axis.title.x = element_blank(),
+        axis.text = element_text(size = 16, color = 'black'),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.title = element_blank(),
+        legend.position = 'bottom',
+        legend.background = element_rect(fill = 'cornsilk'),
+        legend.text = element_text(size = 16)) +
+  geom_text(aes(label=paste(Percentage,"%",sep="")), vjust = -0.5, size = 8) +
+  scale_fill_brewer(palette='Set1')
+  
+p1 + p2
+```
+
+**Note that the total does not add up to 100, since we ignore respondents who do not program in either R or Python**.
+
+In India about 17% (15% + 2%) of the respondents program in R versus 22 (18% + 4%) globally.
+
+On the other hand, 81% (66% + 15%) of respondents based in India program in Python as compared to 78% globally.
+
+Overall, the percentage of respondents programming in R is less compared to Python even globally. But the numbers in India are even smaller. R clearly lags Python when it comes to respondents from India. Since the respondents do not form a randomized sample, we cannot say for sure that R adoption lags behind that of Python. But the difference between the two is too large to not consider the possibility that R adoption lags that of Python by a significant amount.
+
+This sets the stage for Part 2. We will try and <font color = 'red'>**explore**</font> the reasons for the large gap between Python and R, in terms of respondents.
+
+## Part II: R and Python over the years in India
+We begin by looking at trends over the last three years in terms of percentage of Python vs R respondents.
+
+
+```{r,fig.width=14, fig.height = 7, echo=FALSE}
+p2020<-mldss_india_df %>%
+  select(contains("Q7_")) %>%
+  mutate(Python_R_Choice = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  group_by(Python_R_Choice) %>%
+  summarize(Count = n()) %>%
+  mutate(Percentage = 100*round(Count/sum(Count),2)) %>%
+  mutate(Year = "2020")
+
+p2019<-mldss_2019_india_df %>%
+  select(contains("Q18_")) %>%
+  mutate(Python_R_Choice = 
+           ifelse(Q18_Part_1 == "Python" & Q18_Part_2 == "R", "Python_n_R",
+                  ifelse(Q18_Part_1 == "Python" & Q18_Part_2 == "", "Python",
+                         ifelse(Q18_Part_1 == "" & Q18_Part_2 == "R", "R","No")))) %>%
+  group_by(Python_R_Choice) %>%
+  summarize(Count = n()) %>%
+  mutate(Percentage = 100*round(Count/sum(Count),2)) %>%
+  mutate(Year = "2019")
+
+p2018<-mldss_2018_india_df %>%
+  select(contains("Q16_")) %>%
+  mutate(Python_R_Choice = 
+           ifelse(Q16_Part_1 == "Python" & Q16_Part_2 == "R", "Python_n_R",
+                  ifelse(Q16_Part_1 == "Python" & Q16_Part_2 == "", "Python",
+                         ifelse(Q16_Part_1 == "" & Q16_Part_2 == "R", "R","No")))) %>%
+  group_by(Python_R_Choice) %>%
+  summarize(Count = n()) %>%
+  mutate(Percentage = 100*round(Count/sum(Count),2)) %>%
+  mutate(Year = "2018")
+
+bind_rows(p2020,p2019,p2018) %T>% 
+  { max_pct_y <<- max(.["Percentage"])} %>%
+  filter(Python_R_Choice != 'No') %>%
+  ggplot(aes(x=Python_R_Choice,y=Percentage, fill = Python_R_Choice)) +
+  geom_col() +
+  ylim(c(0,max_pct_y + 5)) +
+  labs(y="Percentage of Respondents",
+      title = "R and Python over the years",
+             caption = paste("Number of Respondents",
+                       paste0("Year 2020: ",num_india_respondents),
+                       paste0("Year 2019: ",num_2019_india_respondents),
+                       paste0("Year 2018: ",num_2018_india_respondents),
+                       sep = "\n")) +
+  facet_wrap(~Year) +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 24),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size = 18),
+        axis.text.x=element_text(size = 14),
+        axis.text.y=element_blank(),
+        axis.ticks.y = element_blank(),
+        strip.text = element_text(face="bold", size=24),
+        strip.background = element_rect(fill="bisque"),
+        legend.position = "bottom",
+        legend.text = element_text(size = 16),
+        legend.background = element_rect(fill = 'cornsilk'),
+        legend.title = element_blank()) +
+  geom_text(aes(label=paste0(Percentage,"%")), size = 6, vjust=-0.25) +
+  scale_fill_brewer(palette='Set1')
+```
+
+From the plots above, we see a big growth for Python from 2019 to 2020, while R dips from 2018 to 2019 and dips a wee bit further in 2020.
+
+ >In addition to the Python vs R comparison, we will explore the reasons dip in R respondents through the years.
+
+### Exploring the dip: changes in respondent profile over the years
+To investigate what has caused the dip in respondents who program in R, let's explore Educational Background and Job Titles reported by respondents to see if there is a change in the respondent profile over the years.
+
+
+#### Educational Background 
+
+We ignore the following respondents who have not specified their educational background clearly:                                  
+  1. I prefer not to answer                                                 
+  2. No formal education past high school                                            
+  3. Some college/university study without earning a bachelor’s degree
+
+These numbers are very small (< 5%) and do not impact our analysis. Besides the plots are less cluttered.
+
+**We plot the actual numbers instead of percentages.**
+
+```{r, fig.width=16, fig.height=10, echo=FALSE}
+mldss_india_df$Q4<-str_replace(mldss_india_df$Q4,"’","'")
+python_r_edu_summary<-mldss_india_df %>%
+  select("Q4","Q7_Part_1","Q7_Part_2") %>% 
+  mutate(Python_R_Choice = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  group_by(Q4,Python_R_Choice) %>% 
+  summarize(Count = n()) %>%
+  filter(Q4 != "") %>% 
+  pivot_wider(names_from = Python_R_Choice, values_from = Count, values_fill = 0) %>% 
+  ungroup() %>% 
+    replace_na(list(
+      Python = 0,
+      R = 0)
+    ) %>% 
+  add_row(
+    Q4="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.)))))
+
+mldss_2019_india_df$Q4<-str_replace(mldss_2019_india_df$Q4,"’","'")
+python_r_edu_2019_summary<-mldss_2019_india_df %>%
+  select("Q4","Q18_Part_1","Q18_Part_2") %>% 
+  mutate(Python_R_Choice = 
+           ifelse(Q18_Part_1 == "Python" & Q18_Part_2 == "R", "Python_n_R",
+                  ifelse(Q18_Part_1 == "Python" & Q18_Part_2 == "", "Python",
+                         ifelse(Q18_Part_1 == "" & Q18_Part_2 == "R", "R","No")))) %>%
+  group_by(Q4,Python_R_Choice) %>% 
+  summarize(Count = n()) %>%
+  filter(Q4 != "") %>% 
+  pivot_wider(names_from = Python_R_Choice, values_from = Count, values_fill = 0) %>% 
+  ungroup() %>% 
+    replace_na(list(
+      Python = 0,
+      R = 0)
+    ) %>% 
+  add_row(
+    Q4="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.)))))
+
+mldss_2018_india_df$Q4<-str_replace(mldss_2018_india_df$Q4,"’","'")
+python_r_edu_2018_summary<-mldss_2018_india_df %>%
+  select("Q4","Q16_Part_1","Q16_Part_2") %>% 
+  mutate(Python_R_Choice = 
+           ifelse(Q16_Part_1 == "Python" & Q16_Part_2 == "R", "Python_n_R",
+                  ifelse(Q16_Part_1 == "Python" & Q16_Part_2 == "", "Python",
+                         ifelse(Q16_Part_1 == "" & Q16_Part_2 == "R", "R","No")))) %>%
+  group_by(Q4,Python_R_Choice) %>% 
+  summarize(Count = n()) %>%
+  filter(Q4 != "") %>% 
+  pivot_wider(names_from = Python_R_Choice, values_from = Count, values_fill = 0) %>% 
+  ungroup() %>% 
+    replace_na(list(
+      Python = 0,
+      R = 0)
+    ) %>% 
+  add_row(
+    Q4="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.)))))
+
+python_r_edu_summary$Year<-"2020"
+python_r_edu_2019_summary$Year<-"2019"
+python_r_edu_2018_summary$Year<-"2018"
+
+combined_edu_df<-bind_rows(
+  python_r_edu_summary,
+  python_r_edu_2019_summary,
+  python_r_edu_2018_summary
+)
+
+ignored_responses<-c("I prefer not to answer",
+                     "No formal education past high school",
+                     "Some college/university study without earning a bachelor's degree")
+
+combined_edu_df$Q4<-as.factor(combined_edu_df$Q4)  #, levels = rev(title_levels_combined))
+
+max_y<-combined_edu_df %>% filter(Q4 != 'Total') %>% group_by(Year,Python) %>% pull(Python) %>% max()
+
+  combined_edu_df %T>%
+  select(Q4,Python,R,Python_n_R,Year) %>%
+  filter(Q4 != 'Total') %>% 
+  filter(!Q4 %in% ignored_responses) %>% 
+  pivot_longer(cols = c("Python","R","Python_n_R"), names_to = c("PL"), values_to = c("Count")) %>%
+  ggplot(aes(x=Q4,y=Count,fill = PL)) + geom_col(position='dodge') +
+  facet_wrap(~Year,nrow = 3, strip.position = "right") +
+  ylim(c(0,max_y + 150)) +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size=24),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size = 20),
+        axis.text.x=element_text(size = 16),
+        axis.text.y=element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom",
+        legend.background = element_blank(),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        strip.text = element_text(face="bold", size=24),
+        strip.background = element_rect(fill="bisque")) +
+  labs(y = "Number of Respondents", 
+       title = "Trends: Distribution of Educational Background of Respondents from 2018-2020") +
+  geom_text(aes(label=Count), position=position_dodge(width=0.9), size = 6, vjust=-0.5) +
+  scale_fill_brewer(palette = 'Set1')
+```
+
+We notice a dramatic shift in the educational background of respondents programming in **R only**: there is a big dip in the number of respondents with Bachelor's degree from 2018 to 2019 and this dip continues to 2020. There is also a dip in the number of respondents with Master's degree.  We do not see such a shift for those that program in **Python only**. There is a  dip for those that program in **both Python and R** in 2019 and some of that ground is recovered in 2020.
+
+
+#### Overall Educational Profile Trends in India
+Let's explore the educational background over the years for all respondents from India to see if there is a general fall in number of respondents with Bachelor's and Master's degree.
+
+```{r, fig.width=14, fig.height=8, echo=FALSE}
+mldss_india_df$Q4<-str_replace(mldss_india_df$Q4,"’","'")
+edu_summary<-mldss_india_df %>%
+  group_by(Q4) %>% 
+  summarize(Count = n()) %>%
+  filter(Q4 != "")
+
+mldss_2019_india_df$Q4<-str_replace(mldss_2019_india_df$Q4,"’","'")
+edu_2019_summary<-mldss_2019_india_df %>%
+  group_by(Q4) %>% 
+  summarize(Count = n()) %>%
+  filter(Q4 != "")
+
+mldss_2018_india_df$Q4<-str_replace(mldss_2018_india_df$Q4,"’","'")
+edu_2018_summary<-mldss_2018_india_df %>%
+  group_by(Q4) %>% 
+  summarize(Count = n()) %>%
+  filter(Q4 != "")
+
+edu_summary$Year<-"2020"
+edu_2019_summary$Year<-"2019"
+edu_2018_summary$Year<-"2018"
+
+combined_edu_summary_df<-bind_rows(
+  edu_summary,
+  edu_2019_summary,
+  edu_2018_summary
+)
+
+ignored_responses<-c("I prefer not to answer",
+                     "No formal education past high school",
+                     "Some college/university study without earning a bachelor's degree")
+
+combined_edu_summary_df$Q4<-as.factor(combined_edu_summary_df$Q4)
+max_y<-combined_edu_summary_df %>% group_by(Year) %>% summarize(n = max(Count)) %>% pull(n) %>% max()
+
+
+combined_edu_summary_df %>%
+  filter(!Q4 %in% ignored_responses) %>% 
+  ggplot(aes(x=Q4,y=Count,fill = Q4)) + geom_col(position='dodge') +
+  facet_wrap(~Year,nrow = 3, strip.position = "right") + 
+  ylim(c(0,max_y + 350)) +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size=24),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size = 20),
+        axis.text.x=element_text(size = 14),
+        axis.text.y=element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        legend.background = element_rect(fill = 'cornsilk'),
+        strip.text = element_text(face="bold", size=24),
+        strip.background = element_rect(fill="bisque")) +
+  labs(y = "Number of Respondents",
+       title = "Trends: Educational Background of all India Respondents") +
+  geom_text(aes(label=Count), position=position_dodge(width=0.9), size = 6, vjust=-0.5) +
+  scale_fill_brewer(palette = 'Set1')
+```
+
+The number of respondents with Bachelor's and Master's degree is definitely going up over time.
+
+
+#### Respondent Job Titles
+
+There are some differences in the way data about job titles was collected across the years. For example, 
+
+- The title **Machine Learning Engineer** was introduced in 2020.
+- Year 2018 had quite a lot of titles that were dropped in 2019 and 2020.
+
+We retain only the list of common titles, with the exception of **Machine Learning Engineer**. The titles that we drop from 2018 had very few respondents. On the other hand, those reporting a title of **Machine Learning Engineer** is not an insignificant number. Besides, this is something we will see in future surveys, so it makes sense to retain it.
+
+
+```{r, fig.width=14, fig.height=10, echo=FALSE}
+python_r_title_summary<-mldss_india_df %>%
+  select("Q5","Q7_Part_1","Q7_Part_2") %>% 
+  mutate(Python_R_Choice = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  group_by(Q5,Python_R_Choice) %>% 
+  summarize(Count = n()) %>%
+  filter(Q5 != "") %>% 
+  pivot_wider(names_from = Python_R_Choice, values_from = Count, values_fill = 0) %>% 
+  ungroup() %>% 
+    replace_na(list(
+      Python = 0,
+      R = 0)
+    ) %>% 
+  add_row(
+    Q5="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.)))))
+
+python_r_title_2019_summary<-mldss_2019_india_df %>%
+  select("Q5","Q18_Part_1","Q18_Part_2") %>% 
+  mutate(Python_R_Choice = 
+           ifelse(Q18_Part_1 == "Python" & Q18_Part_2 == "R", "Python_n_R",
+                  ifelse(Q18_Part_1 == "Python" & Q18_Part_2 == "", "Python",
+                         ifelse(Q18_Part_1 == "" & Q18_Part_2 == "R", "R","No")))) %>%
+  group_by(Q5,Python_R_Choice) %>% 
+  summarize(Count = n()) %>%
+  filter(Q5 != "") %>% 
+  pivot_wider(names_from = Python_R_Choice, values_from = Count, values_fill = 0) %>% 
+  ungroup() %>% 
+    replace_na(list(
+      Python = 0,
+      R = 0)
+    ) %>% 
+  add_row(
+    Q5="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.)))))
+
+python_r_title_2018_summary<-mldss_2018_india_df %>%
+  select("Q6","Q16_Part_1","Q16_Part_2") %>% 
+  rename(Q5 = Q6) %>% 
+  mutate(Python_R_Choice = 
+           ifelse(Q16_Part_1 == "Python" & Q16_Part_2 == "R", "Python_n_R",
+                  ifelse(Q16_Part_1 == "Python" & Q16_Part_2 == "", "Python",
+                         ifelse(Q16_Part_1 == "" & Q16_Part_2 == "R", "R","No")))) %>%
+  group_by(Q5,Python_R_Choice) %>% 
+  summarize(Count = n()) %>%
+  filter(Q5 != "") %>% 
+  pivot_wider(names_from = Python_R_Choice, values_from = Count, values_fill = 0) %>% 
+  ungroup() %>% 
+    replace_na(list(
+      Python = 0,
+      R = 0)
+    ) %>% 
+  add_row(
+    Q5="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.)))))
+
+python_r_title_summary$Year<-"2020"
+
+python_r_title_summary<-python_r_title_summary %>% 
+  mutate(Q5 = replace(Q5, Q5 == "Machine Learning Engineer", "ML Engineer")) %>% 
+  mutate(Q5 = replace(Q5, Q5 == "Currently not employed", "Not employed"))
+
+python_r_title_2019_summary$Year<-"2019"
+python_r_title_2018_summary$Year<-"2018"
+
+combined_title_df<-bind_rows(
+  python_r_title_summary,
+  python_r_title_2019_summary,
+  python_r_title_2018_summary
+)
+
+title_levels_combined<-c("Business Analyst","Data Analyst", "Statistician","Research Scientist",
+                "Data Scientist","DBA/Database Engineer","Data Engineer",
+                "Product/Project Manager","Software Engineer","Student",
+                "ML Engineer")
+
+#### Percentages Plot
+# combined_title_df$Q5<-factor(combined_title_df$Q5, levels = rev(title_levels_combined))
+# combined_title_df %>%
+#   filter(Q5 %in% title_levels_combined) %>% 
+#   select(Q5,Python_norm,R_norm,Python_n_R_norm,Year) %>%
+#   rename(Python = Python_norm, R = R_norm, Python_n_R = Python_n_R_norm) %>% 
+#   pivot_longer(cols = c("Python","R","Python_n_R"), names_to = c("PL"), values_to = c("Percentage")) %>%
+#   ggplot(aes(x=Q5,y=Percentage,fill = PL)) + geom_col(position='dodge') +
+#   facet_wrap(~Year,nrow = 3, strip.position = "right") +
+#   theme(axis.text.x=element_text(angle=45, hjust=1, size = 14),
+#         axis.text.y=element_text(size = 14),
+#     axis.title.x=element_blank(),
+#     axis.title.y=element_text(size = 14),
+#     title = element_text(size=16),
+#         legend.position = "bottom",
+#         legend.title = element_blank(),
+#     strip.text = element_text(face="bold", size=20),
+#     strip.background = element_rect(fill="tan")) +
+#   labs(y = "Percentage of Respondents", title = "Changes in Respondents Profile from 2018-2020") +
+#   geom_text(aes(label=paste0(round(Percentage),"%")), position=position_dodge(width=0.9), size = 4, vjust=-0.5) 
+
+combined_title_df %>%
+  filter(Q5 %in% title_levels_combined) %>% 
+  filter(Q5 != "Student") %>% 
+  select(Q5,Python,R,Python_n_R,Year) %>%
+  pivot_longer(cols = c("Python","R","Python_n_R"), names_to = c("PL"), values_to = c("Count")) %>%
+  ggplot(aes(x=Q5,y=Count,fill = PL)) + geom_col(position='dodge') +
+  facet_wrap(~Year,nrow = 3, strip.position = "right") +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 24),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size = 18),
+        axis.text.x=element_text(angle=45, hjust=1, size = 16),
+        axis.text.y=element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 16),
+        legend.background = element_rect(fill = 'cornsilk'),
+        strip.text = element_text(face="bold", size=24),
+        strip.background = element_rect(fill="bisque")) +
+  labs(y = "Number of Respondents", 
+       title = "Trends: Distribution of Respondents' Job Titles from 2018 to 2020") +
+  geom_text(aes(label=Count), position=position_dodge(width=0.9), size = 5, vjust=-0.5) +
+  scale_fill_brewer(palette = 'Set1')
+```
+
+We have organized the plot so that the titles on the left side of the plot are those which contain the majority of the respondents that program in **R only**.
+
+We notice that the most common titles reported by **R only** Programmers are Data Scientist, Data Analyst and Business Analyst: we also see dip in the number of respondents for these titles. In fact, we see a dip in the numbers for these titles for those that program in both **Python and R**. In contrast, we notice a small uptick in the numbers of Statisticians, but this rise in Statistician numbers is not commensurate with the dip in Business Analysts and Data Analysts
+
+As for those programming in **Python only**, we see that the numbers of Business Analysts and Data Analysts going up. The number of Data Scientists programming in **Python only** is also going up.
+
+Perhaps there is an association between the Educational Background and Job Titles. Let's see if the educational background of Business Analysts and Data Analysts programming in R is primarily Bachelor's Degree and Master's Degree.
+
+From the two plots below, it is clear that majority of the Data Analysts and Business Analysts who program in R have a Bachelor's or Master's degree in 2018. This is true of Python also.
+
+```{r, fig.width=14, fig.height=8, echo=FALSE}
+mldss_india_df$Q4<-str_replace(mldss_india_df$Q4,"’","'")
+r_edu_summary<-mldss_india_df %>%
+  filter(Q7_Part_1 == "",Q7_Part_2 == "R") %>%
+  filter(Q4 %in% c("Bachelor's degree","Master's degree","Doctoral degree","Professional degree")) %>%
+  filter(Q5 %in% c("Business Analyst","Data Analyst")) %>%
+  group_by(Q4,Q5) %>%
+  summarize(Count = n())
+r_edu_summary$Year<-"2020"
+
+mldss_2019_india_df$Q4<-str_replace(mldss_2019_india_df$Q4,"’","'")
+r_edu_2019_summary<-mldss_2019_india_df %>%
+  filter(Q18_Part_1 == "",Q18_Part_2 == "R") %>%
+  filter(Q4 %in% c("Bachelor's degree","Master's degree","Doctoral degree","Professional degree")) %>%
+  filter(Q5 %in% c("Business Analyst","Data Analyst")) %>%
+  group_by(Q4,Q5) %>%
+  summarize(Count = n())
+r_edu_2019_summary$Year<-"2019"
+
+mldss_2018_india_df$Q4<-str_replace(mldss_2018_india_df$Q4,"’","'")
+r_edu_2018_summary<-mldss_2018_india_df %>%
+  filter(Q16_Part_1 == "",Q16_Part_2 == "R") %>%
+  filter(Q4 %in% c("Bachelor's degree","Master's degree","Doctoral degree","Professional degree")) %>%
+  filter(Q6 %in% c("Business Analyst","Data Analyst")) %>%
+  group_by(Q4,Q6) %>%
+  summarize(Count = n()) %>%
+  rename(Q5 = Q6)
+r_edu_2018_summary$Year<-"2018"
+
+combined_edu_df<-bind_rows(
+  r_edu_summary,
+  r_edu_2019_summary,
+  r_edu_2018_summary
+)
+
+max_r_count<-max(combined_edu_df$Count)
+
+r_plot<-combined_edu_df %T>%
+  select(Q4,Q5,Year,Count) %>%
+  ggplot(aes(x=Q4,y=Count,fill=Q5)) +
+  geom_col(position = "dodge") +
+  ylim(c(0,max_r_count + 20)) +
+  facet_wrap(~Year,nrow = 3, strip.position = "right") +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 16),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size = 16),
+        axis.text.x=element_text(angle=45, hjust=1, size = 16, color = 'black'),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14),
+        legend.background = element_blank(),
+        strip.text = element_text(face="bold", size=24),
+        strip.background = element_rect(fill="bisque")) +
+  labs(x = "Educational Background",y = "Number of Respondents",
+        title = "R Business & Data Analyst Respondents",
+       subtitle = "Distribution of Respondents by Educational Background",
+       fill = "Respondent Title") +
+  geom_text(aes(label=Count), position=position_dodge(width=0.9), size = 5, vjust=-0.5) +
+  scale_fill_brewer(palette = 'Set1')
+
+python_edu_summary<-mldss_india_df %>%
+  filter(Q7_Part_1 == "Python",Q7_Part_2 == "") %>%
+  filter(Q4 %in% c("Bachelor's degree","Master's degree","Doctoral degree","Professional degree")) %>%
+  filter(Q5 %in% c("Business Analyst","Data Analyst")) %>%
+  group_by(Q4,Q5) %>%
+  summarize(Count = n())
+python_edu_summary$Year<-"2020"
+
+python_edu_2019_summary<-mldss_2019_india_df %>%
+  filter(Q18_Part_1 == "Python",Q18_Part_2 == "") %>%
+  filter(Q4 %in% c("Bachelor's degree","Master's degree","Doctoral degree","Professional degree")) %>%
+  filter(Q5 %in% c("Business Analyst","Data Analyst")) %>%
+  group_by(Q4,Q5) %>%
+  summarize(Count = n())
+python_edu_2019_summary$Year<-"2019"
+
+python_edu_2018_summary<-mldss_2018_india_df %>%
+  filter(Q16_Part_1 == "Python",Q16_Part_2 == "") %>%
+  filter(Q4 %in% c("Bachelor's degree","Master's degree","Doctoral degree","Professional degree")) %>%
+  filter(Q6 %in% c("Business Analyst","Data Analyst")) %>%
+  group_by(Q4,Q6) %>%
+  summarize(Count = n()) %>%
+  rename(Q5 = Q6)
+python_edu_2018_summary$Year<-"2018"
+
+combined_python_edu_df<-bind_rows(
+  python_edu_summary,
+  python_edu_2019_summary,
+  python_edu_2018_summary
+)
+
+max_python_count<-max(combined_python_edu_df$Count)
+
+python_plot<-combined_python_edu_df %>%
+  select(Q4,Q5,Year,Count) %>%
+  ggplot(aes(x=Q4,y=Count,fill=Q5)) +
+  geom_col(position = "dodge") +
+  ylim(c(0,max_python_count + 10)) +
+  facet_wrap(~Year,nrow = 3, strip.position = "right") +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        title = element_text(size = 16),
+        axis.title.x=element_blank(),
+        axis.text.x=element_text(angle=45, hjust=1, size = 16, color = 'black'),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14),
+        legend.background = element_blank(),
+        strip.text = element_text(face="bold", size=24),
+        strip.background = element_rect(fill="bisque")) +
+  labs(x = "Educational Background",y = "Number of Respondents",
+        title = "Python Business & Data Analyst Respondents",
+       subtitle = "Distribution of Respondents by Educational Background",
+       fill = "Respondent Title") +
+  geom_text(aes(label=Count), position=position_dodge(width=0.9), size = 5, vjust=-0.5) +
+  scale_fill_brewer(palette = 'Set1')
+
+r_plot + python_plot
+```
+
+
+Over the years,the number of respondents with Bachelor's and Master's degree is increasing overall, but these numbers are falling when we consider only those respondents that are programming in R.
+
+> Either, Business Analysts and Data Analysts programming in R are not participating in numbers compared to previous years leading to the dip.
+
+> Or perhaps, there are fewer active Business Analysts and Data Analysts programming in R. If so, is there an underlying reason? Let's check on compensation numbers for R Programmers vis-a-vis Python programmers to see if there is not enough incentive to program in R.
+
+
+#### Comparing Compensation for R and Python Programmers
+
+The following chart shows the percentage of respondents in each compensation level As we can see, R programmers are represented well in all compensation levels.
+
+```{r,fig.width=12, fig.height=12, echo=FALSE}
+comp_levels<-c("$0-999", "1,000-1,999", "2,000-2,999", "3,000-3,999", "4,000-4,999",
+               "5,000-7,499", "7,500-9,999", "10,000-14,999", "15,000-19,999",
+               "20,000-24,999", "25,000-29,999", "30,000-39,999", "40,000-49,999",
+               "50,000-59,999", "60,000-69,999", "70,000-79,999", "80,000-89,999",
+               "90,000-99,999", "100,000-124,999","125,000-149,999" ,"150,000-199,999",
+               "200,000-249,999", "250,000-299,999", "300,000-500,000","> $500,000")    
+
+mldss_india_df %>%
+  select("Q24","Q7_Part_1","Q7_Part_2") %>% 
+  mutate(Python_R_Choice = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  group_by(Q24,Python_R_Choice) %>% 
+  summarize(Count = n()) %>%
+  filter(Q24 != "") %>% 
+  pivot_wider(names_from = Python_R_Choice, values_from = Count, values_fill = 0) %>% 
+  ungroup() %>% 
+    replace_na(list(
+      Python = 0,
+      R = 0,
+      Python_n_R = 0,
+      No = 0)
+    ) %>% 
+  add_row(
+    Q24="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = ((./last(.))))) %>% # funs(norm = (100*(./last(.))))) %>% 
+  filter(Q24 != 'Total') %>% 
+  select(Q24,Python_norm,R_norm,Python_n_R_norm) %>%
+  rename(Python = Python_norm, R = R_norm, Python_n_R = Python_n_R_norm) %>% 
+  pivot_longer(cols = c("Python","R","Python_n_R"), names_to = c("PL"), values_to = c("Percentage")) %>% 
+  mutate(Q24 = factor(Q24, levels = rev(comp_levels))) %>% 
+  ggplot(aes(x=Q24,y=Percentage,fill = PL)) +
+  geom_col(position = "dodge") + 
+  labs(y = "Percentage of Respondents",
+       title = "Distribution of R and Python Respondents across compensation levels") +
+  theme(
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_line(colour = 'bisque'),
+        title = element_text(size = 20),
+        axis.text.y=element_text(size = 10),
+        axis.title.y=element_text(size = 16),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14),
+        legend.background = element_rect(fill = 'cornsilk'),
+        strip.text = element_text(face="bold", size=12),
+        strip.background = element_rect(fill="bisque")) +
+  # geom_text(aes(label=paste0(round(Percentage),"%")), position=position_dodge(width=1), size = 5, hjust=-0.5) +
+ scale_y_continuous(labels=percent) +
+  facet_wrap ( ~Q24, scales = 'free') +
+    # coord_flip() +
+  scale_fill_brewer(palette = 'Set1')
+```
+
+As we can see from the plot above, R programmers are well represented across most of the compensation categories. There are very few programmers at the very high compensation categories and there is R representation in those categories as well.
+
+So it cannot be concluded that lower compensation is a deterring factor in R adoption.
+
+The dip in number of respondents that program in R, over the years, can be directly attributed to fewer respondents in the Business Analyst and Data Analyst jobs.
+
+As opposed to R, Python programmers have a larger range of job titles. This perhaps explains to some extent the overall lower numbers for R. However, the number of Python respondents are larger that those of R, even in these job titles that have R representation.
+
+If the lower number of R respondents as representative of the overall numbers of R programmers in India, it is not clear why that would be.
+
+There is a large number of tools in the R eco-system for these tasks, not to mention that it is generally easy to start with R. The packages in the **`tidyverse`** universe make it relative easy to perform data analysis, **`Shiny`** makes it easy to share analysis on the web and there is a strong community support. R also has a large number of packages for Machine Learning. **<font color='red'>Additional surveys regarding attitude towards R may help shed more light on this</font>**.
+
+We will now deep dive into the use of R, to better understand how R is being used in India.
+
+## Part III: R Usage in India
+
+In our analysis, while our focus is on respondents that program in R only, we include those respondents who program in both Python and R to see if there are any similarities.
+
+### Activities Performed by R Programmers
+We begin by looking at typical activities performed by R Programmers.
+
+```{r, fig.width=12,fig.height=8, echo=FALSE}
+
+title_levels_activity<-c("Business Analyst","Data Analyst", "Statistician","Research Scientist",
+                "Data Scientist","DBA/Database Engineer","Data Engineer",
+                "Product/Project Manager","Software Engineer")
+
+mldss_india_df %>%
+  filter(Q7_Part_1 == "",Q7_Part_2 == 'R') %>%
+  select(Q5,contains("Q23_")) %>%
+  pivot_longer(cols = names(.)[-1], names_to = 'ActivityQuestion', values_to = "Activity") %>%
+  filter(Activity != "") %>%
+  filter(Q5 %in% title_levels_activity) %>% 
+  group_by(Q5,Activity) %>%
+  summarize(Count = n()) %T>%
+  {max_y <<- max(.["Count"])} %>% 
+  mutate(Q5 = factor(Q5, levels = title_levels_activity)) %>% 
+  ggplot(aes(x=Q5,y=Count,fill = Activity)) +
+  geom_col(position='dodge') +
+  ylim(c(0,max_y + 2)) +
+  theme(axis.text.x=element_text(angle=45, hjust=1, size = 14),
+        axis.text.y=element_text(size = 14),
+    axis.title.x=element_blank(),
+    axis.title.y=element_text(size = 14),
+    title = element_text(size = 16),
+    legend.position = "bottom",
+    legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 1,
+                             label.theme = element_text(size = 12))) +
+  labs(y = "Number of Respondents", title = "Activities performed by R Programmers") +
+  geom_text(aes(label=Count), position=position_dodge(width=0.9), size = 4, vjust=-0.5) +
+  scale_fill_brewer(palette = 'Set1')
+```
+
+Respondents that program in R only clearly perform a range of activities. The primary activity of all Job Titles is to **Analyze and understand data**.
+
+What is interesting about the above plot is that the Data Analyst, the Data Scientist, the Research Scientist and the Statistician are all performing almost the same activities. And to some extent, this is true for the Business Analyst: the primary exception being that Business Analysts do not build prototypes.
+
+<font color='red'>Let's look at the number of activities performed by R programmers, on average</font>.
+
+```{r, fig.width=14, echo=FALSE}
+mldss_india_df %>%
+  filter(Q7_Part_1 == "",Q7_Part_2 == 'R') %>%
+  select(Q5,Q21,contains("Q23_")) %>% 
+  rowwise() %>% 
+  mutate_at(
+    vars(starts_with('Q23_')),
+    funs(case_when(
+    . == "" ~ 0,
+    TRUE ~ 1
+    ))
+  ) %>% 
+  rowwise() %>% 
+  mutate(
+    num_activities = sum(c_across(Q23_Part_1:Q23_OTHER))
+  ) %>% 
+  group_by(Q5,Q21) %>% 
+  filter(Q21 != "") %>% 
+  summarize("MeanActivityCount" = round(mean(num_activities))) %T>% {
+    max_y<<- max(.["MeanActivityCount"])
+  } %>% 
+mutate(Q21 = factor(Q21, levels = c('0','1-2','3-4','5-9','10-14','15-19','20+'))) %>%
+  ggplot(aes(x=Q21, y=MeanActivityCount, fill = Q5)) +
+  geom_col(position='dodge') +
+  ylim(c(0,max_y + 2)) +
+  labs(title = "Number of different activities performed by R Programmers",
+       x = "Team Size",
+       y = "Activity Count", x = "Size of Team") +
+  geom_text(aes(label=MeanActivityCount), position=position_dodge(width=0.9), size = 5, vjust=-0.5) +
+  theme(title = element_text(size = 18),
+        axis.text.x=element_text(size = 14),
+        axis.text.y=element_text(size = 14),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14)) +
+  scale_fill_brewer(palette='Set1')
+
+  # scale_y_continuous(breaks = seq(1,(max_y+5),2)) +
+```
+
+There is a wide variation in general, those in smaller teams perform fewer different types of tasks. Statisticians and Data Scientists seem to be performing a large variety of tasks, on average.
+
+### Visualization Tools
+Effective visualizations are important for data science teams.
+
+The following plot shows the Visualization tools used by R programmers: we are primarily interested in seeing the use of **`ggplot`** and **`Shiny`**.
+
+```{r, fig.width=14, fig.height=6, echo=FALSE}
+mldss_india_df %>%
+  mutate(Language = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  select(Language,contains("Q14_")) %>% 
+  pivot_longer(cols = names(.)[-1], names_to = "VizQuestion", values_to = "VizLib") %>%
+  select(Language,VizLib) %>%
+  filter(VizLib != "") %>%
+  group_by(Language,VizLib) %>%
+  summarize("NumberOfResponses" = n()) %>% 
+  pivot_wider(names_from = Language, values_from = NumberOfResponses, values_fill = 0) %>%
+  add_row(
+    VizLib="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.))))) %>% 
+  filter(VizLib != 'Total') %>% 
+  select(VizLib,R_norm,Python_n_R_norm) %>%
+  rename(R = R_norm, Python_n_R = Python_n_R_norm) %>% 
+  pivot_longer(cols = c("R","Python_n_R"), names_to = c("PL"), values_to = c("Percentage")) %T>% {
+    max_y<<-max(.["Percentage"]) 
+  } %>% 
+  ggplot(aes(x=reorder(VizLib,-Percentage),y=Percentage,fill = PL)) +
+  geom_col(position = "dodge") + 
+  ylim(c(0,max_y + 5)) +
+  theme(title = element_text(size = 16),
+        axis.title.x=element_blank(),
+        axis.text.x=element_text(angle=45, hjust=1,size = 14),
+        axis.text.y=element_text(size = 14),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14)) +
+  geom_text(aes(label=paste0(round(Percentage),"%")), position=position_dodge(width=0.9), size = 5, vjust=-0.5) +
+  labs(y = "Percentage of Respondents",
+       title = "Visualization tools used by R / Python_n_R Programmers") +
+  scale_fill_brewer(palette = 'Set1')
+```
+
+The findings are as expected. Those that program in Python and R use more of **`Matplotlib`** and **`Seaborn`**. What is interesting is that a comparative number of those who program in both Python and R, also use **`ggplot`**.
+
+On the other hand, almost half of those who program in R only use **`ggplot`**. While the number is impressive, one would expect a higher number.
+
+And when it comes to **`Shiny`**, only 13% of those who program in R only use it. Given the otherwise massive popularity of Shiny, this is very low. Tools similar to Shiny are just about coming up in the Python ecosystem, so the low number cannot be attributed to preference for Python based tools.
+
+The percentages for 2018 and 2019 for **`ggplot`** and **`Shiny`** are not much different. These are not presented here for brevity, since they do not really contribute much to the discussion.
+
+<font color='red'>Let's see if there is a differences in use of **`ggplot`** and **`Shiny`** across titles for **R Programmers**</font>
+
+```{r,fig.width=12, echo=FALSE}
+mldss_india_df %>% 
+  mutate(Language = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  filter(Language %in% c("R","Python_n_R")) %>% 
+  select(Q5,Language,contains("Q14_")) %>% 
+  pivot_longer(cols = names(.)[-1:-2], names_to = "VizQuestion", values_to = "VizLib") %>%
+  select(Q5,Language,VizLib) %>%
+  mutate(VizLib = str_trim(VizLib)) %>% 
+  filter(VizLib %in% c("Ggplot / ggplot2","Shiny")) %>% 
+  filter(!Q5 %in% c("Currently not employed","Other")) %>% 
+  group_by(Q5,Language,VizLib) %>%
+  summarize(NumberOfResponses = n()) %T>% {
+    max_y<<-max(.["NumberOfResponses"])
+  } %>% 
+  ggplot(aes(x=reorder(VizLib,-NumberOfResponses),y=NumberOfResponses,fill = Q5)) +
+  geom_col(position = "dodge") +
+  ylim(c(0,max_y + 10)) +
+  theme(panel.background = element_rect(fill="beige")) +
+  theme(legend.position = "bottom") +
+  facet_wrap(~Language) +
+  theme(title = element_text(size = 16),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(size = 14),
+        axis.text =element_text(size = 12),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14),
+        strip.text = element_text(face="bold", size=14),
+        strip.background = element_rect(fill="tan")) +
+  guides(fill = guide_legend(ncol = 3,
+                             label.theme = element_text(size = 10))) +
+  labs(y = "Number of Respondents", title = "Shiny and ggplot usage across job profiles") +
+  geom_text(aes(label=NumberOfResponses), position=position_dodge(width=0.9), size = 4, vjust=-0.5) +
+
+  scale_fill_brewer(palette = 'Set3')
+```
+
+Considering those that program in R only, the small numbers for ggplot do come as a surprise. The numbers for Shiny are also small and that could be because not everyone will want to share their results on the Web.
+
+However, if we look at those that program in both R and Python, we notice that Shiny is more popular with Data Analyst and Data Scientist. This is true of ggplot as well, but to a lesser extent. In addition, Business Analysts also use ggplot.
+
+Overall, those that program in both Python and R seem to be leveraging the R eco-system better than those that program in R only.
+
+### Machine Learning Libraries and Algorithms
+
+The plot below shows the difference Machine Learning libraries used by R Programmers.
+
+```{r, fig.width=14, fig.height=6, echo=FALSE}
+mldss_india_df %>%
+  mutate(Language = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  select(Language,contains("Q16_")) %>% 
+  pivot_longer(cols = names(.)[-1], names_to = "MLQuestion", values_to = "MLLib") %>%
+  select(Language,MLLib) %>%
+  filter(MLLib != "") %>%
+  group_by(Language,MLLib) %>%
+  summarize("NumberOfResponses" = n()) %>% 
+  pivot_wider(names_from = Language, values_from = NumberOfResponses, values_fill = 0) %>%
+  add_row(
+    MLLib="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.))))) %>% 
+  filter(MLLib != 'Total') %>% 
+  select(MLLib,R_norm,Python_n_R_norm) %>%
+  rename(R = R_norm, Python_n_R = Python_n_R_norm) %>% 
+  pivot_longer(cols = c("R","Python_n_R"), names_to = c("PL"), values_to = c("Percentage")) %T>% {
+    max_y<<-max(.["Percentage"])
+  } %>% 
+  ggplot(aes(x=reorder(MLLib,-Percentage),y=Percentage,fill = PL)) +
+  geom_col(position = "dodge") + 
+  ylim(c(0,max_y + 5)) +
+  theme(title = element_text(size = 16),
+        axis.title.x=element_blank(),
+        axis.text.x=element_text(angle=45, hjust=1,size=14),
+        axis.text.y=element_text(size=14),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14)) +
+  geom_text(aes(label=paste0(round(Percentage),"%")), position=position_dodge(width=0.9), size = 4, vjust=-0.5) +
+  labs(y = "Percentage of Respondents",
+       title = "ML Libraries used by R / Python_n_R Programmers") +
+  scale_fill_brewer(palette = 'Set1')
+```
+
+Clearly, R Programmers employ a large number of popular Machine Learning libraries. It is no surprise to see **Caret** top the list. It will be interesting to watch for **tidymodels** next year.
+
+Notice that 21% of R only respondents, do not use any Machine Learning libraries.
+
+The plot below shows the Machine Learning methods employed by R Programmers.
+
+```{r, fig.width=14, fig.height=8, echo=FALSE}
+mldss_india_df %>%
+  mutate(Language = 
+           ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "R", "Python_n_R",
+                  ifelse(Q7_Part_1 == "Python" & Q7_Part_2 == "", "Python",
+                         ifelse(Q7_Part_1 == "" & Q7_Part_2 == "R", "R","No")))) %>%
+  select(Language,contains("Q17_")) %>% 
+  pivot_longer(cols = names(.)[-1], names_to = "MLQuestion", values_to = "Algo") %>%
+  select(Language,Algo) %>%
+  filter(Algo != "") %>%
+  group_by(Language,Algo) %>%
+  summarize("NumberOfResponses" = n()) %>% 
+  pivot_wider(names_from = Language, values_from = NumberOfResponses, values_fill = 0) %>%
+  add_row(
+    Algo="Total",
+    Python = sum(.$Python),
+    R = sum(.$R),
+    Python_n_R = sum(.$Python_n_R),
+    No = sum(.$No)
+  ) %>% 
+  mutate_at(vars(c("Python", "R","Python_n_R","No")), funs(norm = (100*(./last(.))))) %>% 
+  filter(Algo != 'Total') %>% 
+  select(Algo,R_norm,Python_n_R_norm) %>%
+  rename(R = R_norm, Python_n_R = Python_n_R_norm) %>% 
+  pivot_longer(cols = c("R","Python_n_R"), names_to = c("PL"), values_to = c("Percentage")) %T>% {
+    max_x<<-max(.["Percentage"])
+  } %>% 
+  ggplot(aes(x=reorder(Algo,Percentage),y=Percentage,fill = PL)) +
+  geom_col(position = "dodge") + 
+  ylim(c(0,max_x + 5)) +
+  theme(title = element_text(size = 16),
+        axis.title.y=element_blank(),
+        axis.text=element_text(size=14),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14)) +
+  geom_text(aes(label=paste0(round(Percentage),"%")), position=position_dodge(width=0.9), size = 4, hjust=-0.5) +
+  labs(y = "Percentage of Respondents",
+       title = "ML Algorithms used by R / Python_n_R Programmers") + coord_flip() +
+  scale_fill_brewer(palette = 'Set1')
+```
+
+Linear Regression seems to be the most popular machine learning algorithm used. Indeed, as per the Executive Summary, Linear Regression is the most popular method among Data Scientists, so this does not come as a surprise.
+
+### Size of Company and Size of Data Science Teams
+
+We close this section with an exploration of the size of companies where R Programmers are employed. We also investigate typical team sizes.
+
+We consider respondents that program in R only.
+
+```{r, fig.width=12, echo=FALSE}
+company_size_plot<-mldss_india_df %>%
+  filter(Q7_Part_1 == "",Q7_Part_2 == 'R') %>%
+  select(Q20) %>%
+  mutate(Q20 = replace(Q20, Q20 == "", "Not Specified")) %>%
+  group_by(Q20) %>%
+  summarize(Count = n()) %T>% {
+    max_y<<-max(.["Count"])
+  } %>% 
+  mutate(Q20 = factor(Q20,
+                     levels = c('Not Specified',
+                                '0-49 employees',
+                                '50-249 employees',
+                                '250-999 employees',
+                                '1000-9,999 employees',
+                                '10,000 or more employees'))) %>%
+  ggplot(aes(x=Q20, y = Count)) +
+  geom_col(fill = '#377EBB') +
+  ylim(c(0,max_y + 5)) +
+  labs(title = "Typical Company sizes", y  = "Number of Respondents") +
+  theme(title = element_text(size = 16),
+        axis.title.x = element_blank(),
+        axis.text.x=element_text(angle=45, hjust=1, size = 12)) +
+  geom_text(aes(label=Count), position=position_dodge(width=0.9), size = 4, vjust=-0.5) +
+  scale_fill_brewer(palette = 'Set1')
+
+team_size_plot<-mldss_india_df %>%
+  filter(Q7_Part_1 == "",Q7_Part_2 == 'R') %>%
+  select(Q21) %>% 
+  mutate(Q21 = replace(Q21, Q21 == "", "Not Specified")) %>%
+  group_by(Q21) %>%
+  summarize(Count = n()) %T>% {
+    max_y<<-max(.["Count"])
+  } %>% 
+  mutate(Q21 = factor(Q21, levels = c('Not Specified',
+      '0','1-2','3-4','5-9','10-14','15-19','20+'))) %>%
+  ggplot(aes(x=Q21, y = Count)) +
+  geom_col(fill = '#377EBB') +
+  ylim(c(0,max_y + 5)) +
+  labs(title = "Typical Team sizes", y  = "Number of Respondents") +
+  theme(title = element_text(size = 16),
+        axis.title.x = element_blank(),
+        axis.text.x=element_text(angle=45, hjust=1, size = 12)) +
+  geom_text(aes(label=Count), position=position_dodge(width=0.9), size = 4, vjust=-0.5) +
+  scale_fill_brewer(palette = 'Set1')
+
+company_size_plot + team_size_plot
+```
+
+We see that R programmers are represented in companies of all sizes.
+
+As far as team sizes go, R programmers work in small and large team sizes.
+
+Of interest is to note that 8 people work in team size of 0. This is most likely a lone individual.
+
+## Closing Notes
+
+Clearly, the prevalence of R in India lags Python by a large number.
+
+The large prevalence of Python perhaps attracts new comers to Python fueling a cycle: however, as the experience of my two friends suggests, this may not be desirable.
+
+In my own work, I move between R and Python seamlessly. In other words, both have their place in the sun and the choice should depend on the task at hand.
+
+A strong eco-system of both languages enriches the Data Science community, enabling them to do more and better.
+
+The R eco-system has a large set of tools for data scientists and machine learning practitioners. Perhaps these need to be introduced to the community in India.

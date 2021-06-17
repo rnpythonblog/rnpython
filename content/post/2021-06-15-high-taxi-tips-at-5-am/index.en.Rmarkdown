@@ -1,0 +1,546 @@
+---
+title: High Taxi Tips at 5 am
+author: Manohar Mulchandani
+date: '2021-06-15'
+slug: high-taxi-tips-at-5-am
+categories:
+  - R
+tags:
+  - Analytics
+subtitle: "Why do New Yorkers Pay high tips at 5 am in the morning"
+summary: "Why do New Yorkers Pay high tips at 5 am in the morning"
+authors: []
+lastmod: '2021-06-15T10:34:50+05:30'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F)
+```
+
+```{r warning=FALSE, echo=FALSE, message=FALSE}
+
+# tidyverse core
+library(readr)
+library(tidyr)
+library(dplyr)
+library(purrr)
+library(stringr)
+library(ggplot2)
+
+# gt Table and Styling
+library(gt)
+library(paletteer)
+
+# Other useful packages
+library(scales)
+```
+
+<style>
+body {
+  background-color:cornsilk;
+}
+</style>
+
+Sometime back, I was working with NYC Taxi Trip data. The dataset has information about pickup and drop off time, trip duration, fare amount and tip amount. "How much should one tip?" is a frequent question. So I decided to explore tipping behaviour.
+
+
+```{r echo=F, warning = F, message=F}
+############################
+trip_data_hr_df <- read.csv("data/nyc_tip_data_by_hr_2019_long_format.csv")
+trip_data_hr_mon_df <- read.csv("data/nyc_tip_data_by_hr_mon_2019_long_format.csv")
+trip_data_hr_wday_df <- read.csv("data/nyc_tip_data_by_hr_wday_2019_long_format.csv")
+trip_data_wday_df <- read.csv("data/nyc_tip_data_by_wday_2019_long_format.csv")
+```
+
+```{r chnk1, echo=FALSE,out.width= "75%", out.height = "450px", out.extra='style="float:right; padding:10px"'}
+trip_data_hr_df %>%
+    ggplot(aes(x=pu_hour, y = avg_tip_amount)) +
+    geom_col(fill = 'tan', color = 'cornsilk') +
+    geom_text(aes(label=round(avg_tip_amount,1)),
+              size = 3,
+              color = 'tan',
+              vjust=-0.35) +
+    labs(x = "Hour of Day", y = "Average Tip Amount ($)",
+        title = "Average Tip Amount Variation by the hour",
+        # subtitle = paste("Averaged across 84 million trips in 2019.",
+        #         paste("Each hourly average represents ", round(84000000/(24*1000000),1),
+        #         "Million trips"),sep = '\n'),
+        subtitle = str_wrap(paste("Averaged across 84 million trips in 2019. Each hourly average represents ", round(84000000/(24*1000000),1),
+                "Million trips\n\n"), 72),
+        caption = "Data Source: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp") +
+    theme(
+        plot.margin=unit(c(0.5,1.0,1.0,1.0),"cm"),
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        title = element_text(size = 16, color = 'darkgrey', face = 'bold'),
+        plot.subtitle = element_text(size = 10, color = 'dimgray'),
+        plot.caption = element_text(size = 8, color = 'dimgrey',vjust = -1.5),
+        axis.title = element_text(size = 12, color = 'dimgrey'),
+        axis.title.x.bottom = element_text(margin = margin(t = 0.5, unit = "cm")),
+        axis.title.y.left = element_text(margin = margin(r = 1, unit = "cm")),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank()
+    ) +
+    #scale_x_continuous(expand = c(0, 0))
+    scale_x_continuous(breaks = seq(0,23,1), labels = seq(0,23,1),expand = c(0, 0))
+```
+
+
+On the right is a chart that shows average tip amounts for NYC taxi
+trips in 2019 by the hour. The raw data is available from this [NYC Open Data
+page](2019 Data: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp).
+
+
+There were ~84 million trips undertaken in 2019 and thus, on average, about 3.5 million trips per hour. Thus, each bar represents an average of ~3.5 million trips. The largenumber of trips will iron out any outliers.
+
+<br>
+
+> Notice that the average tip amount for trips taken between 5 am and 6 am is the highest at $2.4.
+
+That was odd. Most people are in bed or are getting up at around 5 am. If you ask me if people would be sleepy at 5 am, I would say, yes. If you asked me if people are generous at 5 am, I wouldn't know offhand. If if you pushed me further, "Please look at data", is the best I might be able to muster.
+
+Since I had some data, I decided to investigate further.
+
+
+### Data Drill down
+
+**What is causing people to tip higher at 5 am?**
+
+-   Is this a different type of taxi rider ?
+-   Are these different types of trips ?
+-   Is the data just wrong ?
+
+We do not have data about the passengers. So we have to rule out Option
+1.
+
+Before we jump to conclusion about data quality, let's drill down a bit
+further. Each bar in the graphic above averages 3.5 million rides, which is a lot of rides. The large size of data enables us to drill down further and explore patterns.
+
+Let's split this data month wise and then let's see the average tip
+amounts at all hours, for each month.
+
+```{r echo = F}
+# HELPER FUNCTIONS
+month_order <- c(
+    'Jan','Feb','Mar','Apr',
+    'May','Jun','Jul','Aug',
+    'Sep','Oct','Nov','Dec'
+)
+
+mut_mon_fac <- function(mon) {
+    
+    factor(
+        case_when(
+            mon == 1 ~ 'Jan',
+            mon == 2 ~ 'Feb',
+            mon == 3 ~ 'Mar',
+            mon == 4 ~ 'Apr',
+            mon == 5 ~ 'May',
+            mon == 6 ~ 'Jun',
+            mon == 7 ~ 'Jul',
+            mon == 8 ~ 'Aug',
+            mon == 9 ~ 'Sep',
+            mon == 10 ~ 'Oct',
+            mon == 11 ~ 'Nov',
+            mon == 12 ~ 'Dec'
+        ),
+        levels = month_order
+    )
+}
+
+weekday_order <- c('Mon','Tue','Wed','Thu','Fri','Sat','Sun')
+
+mut_wday_fac <- function(wday) {
+    
+    factor(
+        case_when(
+            wday == 1 ~ 'Sun',
+            wday == 2 ~ 'Mon',
+            wday == 3 ~ 'Tue',
+            wday == 4 ~ 'Wed',
+            wday == 5 ~ 'Thu',
+            wday == 6 ~ 'Fri',
+            wday == 7 ~ 'Sat'
+        ),
+        levels = weekday_order
+    )
+}
+```
+
+```{r echo = F, fig.width=10, fig.height=6}
+trip_data_hr_mon_df %>%
+    mutate(pu_month = factor(pu_month, levels = month_order)) %>% 
+    group_by(pu_hour, pu_month) %>%
+    ggplot(aes(x=pu_hour, y = avg_tip_amount)) +
+    geom_col(fill = 'tan', color = 'cornsilk') +
+    labs(x = "Hour of Day", y = "Average Tip Amount ($)",
+        title = "Average Tip Amount Variation by the Hour for each Month",
+        subtitle = paste("Averaged across 84 million trips in 2019.",
+                         "Each bar is an average of approximately", round(84000000/(24*12*1000)),"Thousand trips"),
+        caption = "Data Source: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp"
+    ) +
+    theme(
+        plot.margin=unit(c(1.5,0.5,1,1),"cm"),
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        panel.grid.major.y = element_line(colour = "lightgray"),
+        panel.grid.minor.y = element_line(colour = "lightgray"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),strip.background = element_rect(fill = "bisque"),
+        title = element_text(size = 16, color = 'dimgrey', face = 'bold'),
+        plot.subtitle = element_text(size = 12, color = 'dimgrey'),
+        plot.caption = element_text(size = 8, color = 'dimgrey',vjust = -1.5),
+        axis.title = element_text(size = 12, color = 'dimgrey'),
+        axis.title.x.bottom = element_text(margin = margin(t = 1, unit = "cm")),
+        axis.title.y.left = element_text(margin = margin(r = 1, unit = "cm")),
+        axis.text = element_text(size = 8, color = 'black'),
+        axis.ticks = element_blank(),
+        strip.text = element_text(colour = 'dimgrey', size = 12)
+    ) + 
+    scale_x_continuous(breaks = seq(1,23,2), labels = seq(1,23,2)) +
+    facet_wrap( ~ pu_month)
+```
+
+> We can easily make out that the average tip amount is consistently high for trips between 5 am and 6 am, across all months. Something is clearly happening here.
+
+While the above plot is useful, it is difficult to see if the tip amount is **ALWAYS** highest for trips between 5 am and 6 am. Here is an alternate visualization: it shows the tip amounts and the cells are shaded according to the tip amount: higher tips have a darker shade.
+
+```{r echo = F,out.width= "85%", out.height = "450px", out.extra='style="float:right; padding:10px"'}
+#trip_data_hr_mon_df <- read.csv("data/nyc_tip_data_by_hr_mon_2019_long_format.csv")
+
+# To get number of time a hour has high value
+max_idx <- trip_data_hr_mon_df %>% 
+  group_by(pu_month) %>% 
+  nest() %>% 
+  mutate(idx = map_int(data,function(data) {which.max(data$avg_tip_amount)})) %>% 
+  pull(idx) %>% 
+  table() %>% 
+  data.frame() %>% 
+  arrange(desc(Freq)) %>% 
+  pull(1) %>% as.character() %>% as.integer()
+
+trip_data_hr_mon_df %>%
+  pivot_wider(names_from = pu_month, values_from = avg_tip_amount) %>%
+  slice(max_idx) %>%
+  round(2) %>%
+  mutate(pu_hour = paste("Hour",pu_hour)) %>%
+  gt(rowname_col = "pu_hour") %>% 
+  tab_header(
+    title = html("<h3 align = 'left'>High Tip Amount Hours</h2>"),
+    subtitle = html("<h4 align = 'left' font-color = 'red'>The hours in the dataset which have the highest value in one of the 12 months</h4>")
+  ) %>% 
+  opt_table_outline(style = "none") %>% 
+  opt_table_lines(extent = "none") %>% 
+  tab_options(table.background.color = 'cornsilk') %>% 
+  data_color(
+    columns = c('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::amber_material"
+        ) %>% as.character(),
+      domain = NULL
+      )
+    )
+
+#### TOP 10 ROWS BY AVERAGE ####
+# trip_data_hr_mon_df %>% 
+#   pivot_wider(names_from = pu_month, values_from = avg_tip_amount) %>% 
+#   rowwise() %>%
+#   mutate(average_tip = mean(Jan:Dec)) %>% ungroup() %>%
+#   slice_max(average_tip, n = 12) %>%
+#   select(-average_tip) %>%
+#   round(2) %>% 
+#   mutate(pu_hour = paste("Hour",pu_hour)) %>%
+#   gt(rowname_col = "pu_hour") %>%
+#   data_color(
+#     columns = c('Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'),
+#     colors = scales::col_numeric(
+#       palette = paletteer::paletteer_d(
+#         palette = "ggsci::amber_material"
+#         ) %>% as.character(),
+#       domain = NULL
+#       )
+#     )
+```
+
+
+<br>
+
+> The average tip for trips between 5 am and 6 am is highest for 9 out of 12 months.
+
+Let check if this pattern also holds out across days.
+
+```{r echo = F,out.width= "75%", out.extra='style="float:right; padding:10px"'}
+max_idx <- trip_data_hr_wday_df %>% 
+  group_by(pu_wday) %>% 
+  nest() %>% 
+  mutate(idx = map_int(data,function(data) {which.max(data$avg_tip_amount)})) %>% 
+  pull(idx) %>% 
+  table() %>% 
+  data.frame() %>% 
+  arrange(desc(Freq)) %>% 
+  pull(1) %>% as.character() %>% as.integer()
+
+trip_data_hr_wday_df %>% 
+  pivot_wider(names_from = pu_wday, values_from = avg_tip_amount) %>% 
+  slice(max_idx) %>%
+  round(2) %>% 
+  mutate(pu_hour = paste("Hour",pu_hour)) %>%
+  gt(rowname_col = "pu_hour") %>%
+    tab_header(
+    title = html("<h3 align = 'left'>High Tip Amount Hours</h2>"),
+    subtitle = html("<h4 align = 'left' font-color = 'red'>The hours in the dataset which have the highest value in one of the 7 days</h4>")
+  ) %>% 
+  opt_table_outline(style = "none") %>% 
+  opt_table_lines(extent = "none") %>% 
+  tab_options(table.background.color = 'cornsilk') %>% 
+  data_color(
+    columns = c('Sun','Mon','Tue','Wed','Thu','Fri','Sat'),
+    colors = scales::col_numeric(
+      palette = paletteer::paletteer_d(
+        palette = "ggsci::amber_material"
+        ) %>% as.character(),
+      domain = NULL
+      )
+    )
+
+# trip_data_hr_wday_df %>% 
+#   pivot_wider(names_from = pu_wday, values_from = avg_tip_amount) %>% 
+#   rowwise() %>%
+#   mutate(average_tip = mean(Sun:Sat)) %>% ungroup() %>%
+#   slice_max(average_tip, n = 12) %>%
+#   select(-average_tip) %>%
+#   round(2) %>% 
+#   mutate(pu_hour = paste("Hour",pu_hour)) %>%
+#   gt(rowname_col = "pu_hour") %>%
+#   data_color(
+#     columns = c('Sun','Mon','Tue','Wed','Thu','Fri','Sat'),
+#     colors = scales::col_numeric(
+#       palette = paletteer::paletteer_d(
+#         palette = "ggsci::amber_material"
+#         ) %>% as.character(),
+#       domain = NULL
+#       )
+#     )
+```
+
+> The average tip amount for trips between 5 am and 6 on Fridays and Saturday. For some other days, it is close to the highest amount. The other three hours are night time hours, and all between 10 am to 1 pm.</font>
+
+> 5 am does seem to stand out.
+
+Let's see if the type of trip undertaken at 5 am is different.
+
+## Investigate Type of Trips
+
+Perhaps the trips between 5 am and 6 am are longer trips; or perhaps these are
+trips to a different type of location. Airport trips are typically
+longer and they are a different type of destination. Let's see if there
+are more airport trips between 5 am and 6 am.</font>
+
+```{r echo = F, message = F}
+air_non_air_trips_df <- read_csv("data/all_airport_non_airport_trips.csv")
+air_non_air_trips_df <- air_non_air_trips_df %>%
+  filter(pos_dist == TRUE, pos_tip == TRUE, high_tip == FALSE) %>%
+  select(pu_hour,pu_month,airport,avg_tip_amount,num_trips)
+```
+
+```{r echo = F, message = F, fig.width=10, fig.height=5}
+air_non_air_trips_df %>% 
+    group_by(pu_hour,airport) %>%
+    summarize(avg_tip_amount_across_months = mean(avg_tip_amount)) %>%
+    mutate(airport = case_when(
+        airport == 'Y' ~ 'Airport',
+        TRUE ~ 'Non Airport'
+    )) %>%
+    mutate(airport = factor(airport, levels = c('Non Airport','Airport'))) %>%
+    ggplot(aes(x=pu_hour,y=avg_tip_amount_across_months,fill=airport)) +
+    geom_col(position = 'dodge') + 
+    geom_text(aes(label=round(avg_tip_amount_across_months,1)),
+              size = 2,
+              color = 'brown',
+              position = position_dodge(width = 1),
+              vjust=-0.25) +
+    scale_x_continuous(breaks = seq(0,23,1), labels = seq(0,23,1), expand = c(0, 0)) + 
+    labs(x = "Hour of Day", y = "Average Tip Amount ($)",
+        title = "Average Tip Amount Variation by the hour and trip type",
+        subtitle = "Averaged across 84 million trips in 2019",
+        caption = "Data Source: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp") +
+    theme(
+        plot.margin=unit(c(1.5,0.5,1,1),"cm"),
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        title = element_text(size = 16, color = 'dimgrey', face = 'bold'),
+        plot.subtitle = element_text(size = 12, color = 'dimgrey'),
+        plot.caption = element_text(size = 8, color = 'dimgrey',vjust = -1.5),
+        axis.title = element_text(size = 12, color = 'dimgrey'),
+        axis.title.x.bottom = element_text(margin = margin(t = 0.5, unit = "cm")),
+        axis.title.y.left = element_text(margin = margin(r = 1, unit = "cm")),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.text.y = element_blank(),
+        # panel.grid.major.y = element_line(colour = "lightgray"),
+        # panel.grid.minor.y = element_line(colour = "lightgray"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.background = element_rect(fill = 'cornsilk'),
+        legend.key.size = unit(0.5,"cm"),
+        legend.position = 'bottom'
+    ) + 
+    guides(fill=guide_legend(title="Trip Type"))
+```
+
+> We have a surprising finding: the tip amounts are actually the lowest at 5 am for non-airport trips.
+
+Tip amounts are generally high for airport trips. In fact, the highest
+average tip amount is at 4 pm in the afternoon. And even the non-airport
+average tip amount is higher at 4 pm as compared to 5 am in the morning.
+Yet the overall average at 5 am is high.
+
+Perhaps there are more airport trips as compared to non-airport trips at 5 am. Let's check that.
+
+```{r echo = F, message = F, fig.width=10,fig.height=5}
+library(scales)
+air_non_air_trips_df %>% 
+    group_by(pu_hour,airport) %>%
+    summarize(total_trips = sum(num_trips)) %>%
+    mutate(airport = case_when(
+        airport == 'Y' ~ 'Airport',
+        TRUE ~ 'Non Airport'
+    )) %>%
+    mutate(airport = factor(airport, levels = c('Non Airport','Airport'))) %>%
+    ggplot(aes(x=pu_hour,y=total_trips,fill=airport)) +
+    geom_col(position = 'dodge') +
+    geom_text(aes(label=round(total_trips/1000000,1)),
+            size = 2,
+            color = 'brown',
+            position = position_dodge(width = 1),
+            vjust=-0.25) +
+    scale_x_continuous(breaks = seq(0,23,1), labels = seq(0,23,1),expand = c(0, 0)) + 
+    #scale_y_continuous(labels = label_number(scale = 1/ 1e6)) + 
+    labs(x = "Hour of Day", y = "Number of Trips (Millions)",
+        title = "Total Number of Trips by the hour and trip type",
+        subtitle = "Total 84 million trips in 2019",
+        caption = "Data Source: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp") +
+    theme(
+        plot.margin=unit(c(1.5,0.5,1,1),"cm"),
+        plot.background = element_rect(fill = "cornsilk"),
+        panel.background = element_rect(fill = 'cornsilk'),
+        title = element_text(size = 16, color = 'dimgrey', face = 'bold'),
+        plot.subtitle = element_text(size = 12, color = 'dimgrey'),
+        plot.caption = element_text(size = 8, color = 'dimgrey',vjust = -1.5),
+        axis.title = element_text(size = 12, color = 'dimgrey'),
+        axis.title.x.bottom = element_text(margin = margin(t = 0.5, unit = "cm")),
+        axis.title.y.left = element_text(margin = margin(r = 1, unit = "cm")),
+        axis.text.x = element_text(size = 10, color = 'black'),
+        axis.text.y = element_blank(),
+        # panel.grid.major.y = element_line(colour = "lightgray"),
+        # panel.grid.minor.y = element_line(colour = "lightgray"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank(),
+        legend.text = element_text(size = 8),
+        legend.title = element_text(size = 10),
+        legend.background = element_rect(fill = 'cornsilk'),
+        legend.key.size = unit(0.5,"cm"),
+        legend.position = 'bottom'
+    ) + 
+    guides(fill=guide_legend(title="Trip Type"))
+```
+
+> Only 20% of the trips between 5 am and 6 am are to the airport. If we look at trips between 4pm and 5pm, only 10% of the trips are airport trips. And that may be the clue.
+
+Let's look at the relative percentages of Airport and Non Airport Trips
+
+```{r echo = F, message = F, fig.height=5, fig.width=10}
+air_non_air_trips_df %>%
+    mutate(airport = factor(case_when(
+      airport == 'Y' ~ 'Airport',
+      TRUE ~ 'Non Airport'
+    ), levels = c('Airport','Non Airport'))) %>%
+    group_by(pu_hour,airport) %>%
+    summarize(total_hourly_trips_by_type = sum(num_trips)) %>% 
+    arrange(pu_hour,airport) %>% 
+    ungroup %>% 
+    group_by(pu_hour) %>% 
+    mutate(avg_trip_pct = round(100*total_hourly_trips_by_type/sum(total_hourly_trips_by_type))) %>% 
+    ungroup() %>%
+    group_by(pu_hour) %>%
+    mutate(cum_pct = cumsum(avg_trip_pct)) %>%
+    mutate(airport = factor(airport, levels = c('Non Airport','Airport'))) %>%
+    ggplot(aes(x=pu_hour,y=avg_trip_pct,fill = airport)) +
+    geom_col() +
+    geom_text(aes(x = pu_hour, y = cum_pct, label=round(avg_trip_pct,2)),
+              size = 4,
+              color = 'brown',
+              vjust=-0.25) +
+    scale_x_continuous(breaks = seq(0,23,1), labels = seq(0,23,1), expand = c(0,0)) + 
+    ylim(0,110) +
+    # scale_y_continuous(breaks = seq(0,100,20), labels = seq(0,100,20)) + 
+    labs(x = "Hour of Day", y = "Average Percentage of Trips",
+        title = "Percentage of Trips (Average) by the hour and trip type",
+        subtitle = "Averaged across 84 million trips in 2019",
+        caption = "Data Source: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp") +
+    theme(title = element_text(size = 16, color = 'dimgrey', face = 'bold'),
+          plot.subtitle = element_text(size = 12, color = 'dimgrey'),
+          plot.caption = element_text(size = 8, color = 'dimgrey',vjust = -1.5),
+          axis.title = element_text(size = 12, color = 'dimgrey'),
+          axis.title.x.bottom = element_text(margin = margin(t = 0.5, unit = "cm")),
+          axis.title.y.left = element_text(margin = margin(r = 1, unit = "cm")),
+          axis.text.x = element_text(size = 10),
+          axis.text.y = element_blank(),
+          plot.margin=unit(c(1.5,0.5,1,1),"cm"),
+          plot.background = element_rect(fill = "cornsilk"),
+          panel.background = element_rect(fill = 'cornsilk'),
+          panel.grid.major.y = element_blank(),
+          axis.ticks = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.x = element_blank(),
+          legend.text = element_text(size = 8),
+          legend.title = element_text(size = 10),
+          legend.background = element_rect(fill = 'cornsilk'),
+          legend.key.size = unit(0.5,"cm"),
+          legend.position = 'bottom'
+    ) + 
+    guides(fill=guide_legend(title="Trip Type"))
+```
+
+The relative percentage of airport trips between 5 am and 6 am is higher
+and since that is higher than any other hour, the overall contribution
+on high tips is higher for trips between 5 am and 6 am. This results in
+an overall higher average tip for trips between 5 am and 6 am.
+
+Please note that trips to the airport always result in high tips,
+regardless of the hour.
+
+So, there is no real advantage for the taxi driver to take rides at 5 am
+in the morning.
+
+```{r}
+tr_a_1<-c(0.2,0.15,0.1)
+tr_na_1<-c(0.8,0.85,0.9)
+
+tr_a_2<-c(0.15,0.15,0.1)
+tr_na_2<-c(0.85,0.85,0.9)
+
+tp1_1<-c(6,6.1,6)
+tp1_2<-c(1.4,1.5,1.6)
+((tr_a_1*tp1_1)+(tr_na_1*tp1_2))/2
+((tr_a_2*tp1_1)+(tr_na_2*tp1_2))/2
+```
