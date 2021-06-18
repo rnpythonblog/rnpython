@@ -1,5 +1,5 @@
 ---
-bio: My interests R, Shiny, Python, Apache Spark and Kafka.
+bio: R, Shiny, Python, Apache Spark, Apache Kafka and Cloud Computing.
 education:
   courses:
   - course: Executive MBA Program (3 Years)
@@ -20,9 +20,6 @@ interests:
 
 role: Data Science, Analytics and Data Engineering
 social:
-- icon: envelope
-  icon_pack: fas
-  link: /#contact
 - display:
     header: true
   icon: twitter
