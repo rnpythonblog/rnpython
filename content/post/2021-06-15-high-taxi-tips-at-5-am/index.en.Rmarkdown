@@ -47,15 +47,14 @@ body {
 }
 </style>
 
-The NYC Taxi Trips dataset is a quite popular, as evinced from a large number of blog posts. The dataset is available in the form of CSV files, organized by month and also by year. The CSV files contain anonymized information about the trip such as pickup and drop off time, pickup and drop off location, trip duration, fare amount and tip amount. It is often used to build models to predict tip amount for a taxi trip.
+The NYC Taxi Trips dataset is a quite popular, as evinced from a large number of blog posts. The dataset is available in the form of [CSV files](https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page), organized by month and also by year. The CSV files contain anonymized information about each trip such as pickup and drop off time, pickup and drop off location, trip duration, fare amount and tip amount. It is often used to build models to predict tip amount for a taxi trip.
 
-"How much should one tip?" when in New York. Let's see if this dataset is any guide for that.
+Let's see if we can see patterns of tipping behaviour: do tip amounts vary by the hour, by the day or month. 
 
-Shown below is a bar graph that plots average tip amounts for taxi
-trips in 2019 by the hour. The raw data is available from this [NYC Open Data
+The bar graph below plots average tip amounts for taxi trips in 2019 by the hour of the day. The raw data is available from this [NYC Open Data
 page](2019 Data: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp).
 
-There were ~84 million trips undertaken in 2019 and thus, on average, about 3.5 million trips at each hour. Thus, each bar represents an average of ~3.5 million trips. The large number of trips will iron out any outliers.
+There were ~84 million trips undertaken in 2019, which works out to about 3.5 million trips at each hour, on average. Thus, each bar represents the average tip across ~3.5 million trips. The large number of trips will iron out any outliers.
 
 ```{r echo=F, warning = F, message=F}
 ############################
@@ -71,7 +70,7 @@ trip_data_hr_df %>%
     geom_col(fill = 'tan', color = 'cornsilk') +
     geom_text(aes(label=round(avg_tip_amount,1)),
               size = 3,
-              color = 'tan',
+              color = 'brown',
               vjust=-0.35) +
     labs(x = "Hour of Day", y = "Average Tip Amount ($)",
         title = "Average Tip Amount Variation by the hour",
@@ -103,24 +102,20 @@ trip_data_hr_df %>%
     scale_x_continuous(breaks = seq(0,23,1), labels = seq(0,23,1),expand = c(0, 0))
 ```
 
-<br>
 
-> Notice that the average tip amount for trips taken between 5 am and 6 am is the highest at $2.4.
+> Notice that the average tip amount for trips taken between 5 am and 6 am is the highest at $2.4. The next highest is for trips between 4 pm and 5 pm at $2.3.
 
-<br>
 
 That is odd. Most people are in bed or are getting up at around 5 am. If you ask me if people would be sleepy at 5 am, I would say, yes. If you asked me if people are generous at 5 am, I wouldn't know offhand. "Please look at data", is the best I might be able to muster.
 
-Since I had some data, I decided to investigate further.
+Since we have some data, let's see if it is of any help.
 
-
-### Data Drill down
 
 **What is causing people to tip higher at 5 am?**
 
--   Is this a different type of taxi rider ?
--   Are these different types of trips ?
--   Is the data just wrong ?
+1. Is this a different type of taxi rider ?
+2. Are these different types of trips ?
+3. Is the data just wrong ?
 
 Since we do not have data about the passengers, we cannot investigate Option
 1.
@@ -213,7 +208,7 @@ trip_data_hr_mon_df %>%
     facet_wrap( ~ pu_month)
 ```
 
-> We can easily make out that the average tip amount is consistently high for trips between 5 am and 6 am, across all months. Something is clearly happening here.
+> We can easily make out that the average tip amount is consistently high for trips between 5 am and 6 am, across all months.
 
 If we look closely, in January and March, the highest average tip is during the late hours of the day. But it is a tad difficult to make this out.
 
@@ -241,7 +236,7 @@ trip_data_hr_mon_df %>%
   gt(rowname_col = "pu_hour") %>% 
   tab_header(
     title = html("<h3 align = 'left'>High Tip Amount Hours</h2>"),
-    subtitle = html("<h4 align = 'left' font-color = 'red'>Here we show data only for those hours in the dataset which have the highest tip value in one of the 12 months</h4>")
+    subtitle = html("<h4 align = 'left' font-color = 'red'>We show average tip data only for those hours in the dataset which have the highest tip value in at least one of the 12 months</h4>")
   ) %>% 
   opt_table_outline(style = "none") %>% 
   opt_table_lines(extent = "none") %>% 
@@ -319,7 +314,7 @@ trip_data_hr_wday_df %>%
   gt(rowname_col = "pu_hour") %>%
     tab_header(
     title = html("<h3 align = 'left'>High Tip Amount Hours</h2>"),
-    subtitle = html("<h4 align = 'left' font-color = 'red'>Here we show data only for those hours in the dataset which have the highest tip value in one of the 7 days</h4>")
+    subtitle = html("<h4 align = 'left'>We show average tip data only for those hours in the dataset which have the highest tip value in at least one of the 7 days</h4>")
   ) %>% 
   opt_table_outline(style = "none") %>% 
   opt_table_lines(extent = "none") %>% 
@@ -446,12 +441,13 @@ air_non_air_trips_df %>%
     guides(fill=guide_legend(title="Trip Type"))
 ```
 
+> Tip amounts are generally high for airport trips.
+
 > We have a surprising finding: the tip amounts are actually the lowest at 5 am for non-airport trips.
 
-Tip amounts are generally high for airport trips. In fact, the highest
-average tip amount is at 4 pm in the afternoon. And even the non-airport
-average tip amount is higher at 4 pm as compared to 5 am in the morning.
-Yet the overall average at 5 am is high.
+> In fact, the average tip amounts at 4 pm are higher than those at 5 am, for both airport trips as well as non-airport trips. But the overall average at 4 pm is $2.3, less than the $2.4 at 5 am.  
+
+**What could be reason for this apparent anomaly ?**
 
 Perhaps there are more airport trips as compared to non-airport trips at 5 am that is pushing up the average. Let's check that.
 
@@ -532,7 +528,7 @@ air_non_air_trips_df %>%
     geom_col() +
     geom_text(aes(x = pu_hour, y = cum_pct, label=round(avg_trip_pct,2)),
               size = 4,
-              color = 'brown',
+              color = 'black',
               vjust=-0.25) +
     scale_x_continuous(breaks = seq(0,23,1), labels = seq(0,23,1), expand = c(0,0)) + 
     ylim(0,110) +
@@ -565,13 +561,36 @@ air_non_air_trips_df %>%
     guides(fill=guide_legend(title="Trip Type"))
 ```
 
-The relative percentage of airport trips between 5 am and 6 am is higher
-and since that is higher than any other hour, the overall contribution
-on high tips is higher for trips between 5 am and 6 am. This results in
+The relative percentage of airport trips between 5 am and 6 am, significantly higher than any other hour. The overall contribution of high tips is greater for trips between 5 am and 6 am. This results in
 an overall higher average tip for trips between 5 am and 6 am.
 
-Please note that trips to the airport always result in high tips,
-regardless of the hour.
+#### Quick Computation
+Let's verify this with a quick computation. We will used data for tips at 5 am and 4 pm. Here is the R code for the same.
+
+```{r echo = T}
+
+#### 5 am Tips ####
+avg_non_airport_tip_5am <- 1.4
+avg_airport_tip_5am <- 6.8
+
+prop_non_airport_trip_5am <- 81
+prop_airport_trip_5am <- 19
+
+avg_5am_tip = (avg_non_airport_tip_5am*prop_non_airport_trip_5am + 
+                 avg_airport_tip_5am*prop_airport_trip_5am)/(prop_non_airport_trip_5am + prop_airport_trip_5am)
+print(paste("Average 5 am Tip:", round(avg_5am_tip,1)))
+
+#### 4 pm Tips ####
+avg_non_airport_tip_4pm <- 1.8
+avg_airport_tip_4pm <- 6.9
+
+prop_non_airport_trip_4pm <- 90
+prop_airport_trip_4pm <- 10
+
+avg_4pm_tip = (avg_non_airport_tip_4pm*prop_non_airport_trip_4pm + 
+                 avg_airport_tip_4pm*prop_airport_trip_4pm)/(prop_non_airport_trip_4pm + prop_airport_trip_4pm)
+print(paste("Average 4 pm Tip:", round(avg_4pm_tip,1)))
+```
 
 ### Closing Notes
 As we can see, New Yorkers are really not paying high tips at 5 am in the morning. The real finding here is that there is a higher percentage of trips to the airport at 5 am in the morning. The higher average tip thus may be an artifact of flight schedules.
