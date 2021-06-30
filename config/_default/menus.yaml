@@ -11,3 +11,6 @@ main:
   - name : "My Courses"  # Title of the link.
     url : "courses/"  # Widget Page folder name.
     weight : 50  # Position of the link in the navigation bar.
+  - name : "Projects"  # Title of the link.
+    url : "projects/"  # Widget Page folder name.
+    weight : 60  # Position of the link in the navigation bar.
