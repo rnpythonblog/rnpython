@@ -8,7 +8,7 @@ categories:
 tags:
   - Analytics
 subtitle: "Why are taxi tips the highest at 5 am in the morning in New York"
-summary: "In this post, we analyze why the average tip is at the highest for taxi rides taken between 5 am and 6 am in the morning"
+summary: "In this post, we analyze why the average tip is at the highest for taxi rides taken between 5 am and 6 am in the morning. The analysis helps discover that tips are not really high, even though a simple average seems to suggest so."
 lastmod: '2021-06-15T10:34:50+05:30'
 featured: no
 image:
@@ -46,9 +46,9 @@ body {
 }
 </style>
 
-The NYC Taxi Trips dataset is quite popular, as evinced from a large number of blog posts. The dataset is available in the form of [CSV files](https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page), organized by month, from 2009 onwards. The CSV files contain anonymized information about each trip such as pickup and drop off time, pickup and drop off location, trip duration, fare amount and tip amount. It is often used to build models to predict tip amount for a taxi trip.
+The NYC Taxi Trips dataset is quite popular, as evinced from a large number of blog posts. The dataset is available in the form of [CSV files](https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page), organized by month, from 2009 onwards. Each entry in a CSV file contains anonymized information about a trip such as pickup and drop off time, pickup and drop off location, trip duration, fare amount and tip amount. This dataset is often used to build models to predict tip amount for a taxi trip.
 
-We will use data from 2019 to identify patterns of tipping behavior: for example, do tip amounts vary from morning, while going to work to evening, when going back home or perhaps going out. The raw data is available from this [NYC Open Data
+We will use data from 2019 to identify patterns of tipping behavior: for example, do tip amounts vary by the time of the day. Is the tip amount for taxi rides in the morning (while going to work, for example) much different from the tip amount for taxi rides in the evening? The raw data for the whole year is available from this [NYC Open Data
 page](2019 Data: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp).
 
 There were ~84 million taxi trips in 2019, so this is best explored using a visualization. And the initial observation is quite surprising. The bar graph below tells us that the highest tip amounts are for trips between 5 am and 6 am.
@@ -101,9 +101,9 @@ trip_data_hr_df %>%
 ```
 
 
-> Notice that the average tip amount for trips taken between 5 am and 6 am is the highest at $2.4. The next highest is for trips between 4 pm and 5 pm at $2.3.
+> The average tip amount for trips taken between 5 am and 6 am is the highest at $2.4. The next highest is for trips between 4 pm and 5 pm at $2.3.
 
-That is odd. Most people are in bed or are getting up at around 5 am. If you ask me if people would be sleepy at 5 am, I would say, yes. If you asked me if people are generous at 5 am, I wouldn't know offhand. "Please look at data", is the best I might be able to muster.
+That is odd. Most people are in bed or are getting up at around 5 am. If you ask me if people would be sleepy at 5 am, I would say, yes. If you asked me if people are generous at 5 am, I wouldn't know offhand. "Please look at the data", is the best I might be able to muster.
 
 Since we have some data, let's see if it is of any help.
 
@@ -118,7 +118,7 @@ Since we do not have data about the passengers, we cannot investigate Option 1.
 Before we jump to conclusion about data quality, let's drill down a bit
 further. There were ~84 million trips undertaken in 2019, which works out to about 3.5 million trips at each hour, on average. Thus, each bar represents the average tip across ~3.5 million trips. While the large number of trips will iron out any outliers, this is still a lot of trips The large size of data enables us to drill down further and explore patterns.
 
-Let's split this data month wise and then let's see the average tip amounts at all hours, for each month.
+Let's split this data month wise and then let's see the average tip amounts at each hour, for each month.
 
 ```{r echo = F}
 # HELPER FUNCTIONS
@@ -175,7 +175,7 @@ trip_data_hr_mon_df %>%
     ggplot(aes(x=pu_hour, y = avg_tip_amount)) +
     geom_col(fill = 'tan', color = 'cornsilk') +
     labs(x = "Hour of Day", y = "Average Tip Amount ($)",
-        title = "Average Tip Amount Variation by the Hour for each Month",
+        title = "Average Tip Amount by the Hour for each Month",
         subtitle = paste("Averaged across 84 million trips in 2019.",
                          "Each bar is an average of approximately", round(84000000/(24*12*1000)),"Thousand trips"),
         caption = "Data Source: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp"
@@ -206,7 +206,7 @@ trip_data_hr_mon_df %>%
 
 If we look closely, in January and March, the highest average tip is during the late hours of the day. But it is a tad difficult to make this out.
 
-Here is an alternate visualization: it shows the tip amounts for selected hours and the cells are shaded according to the tip amount: higher tips have a darker shade.
+Here is an alternate visualization: it shows the tip amounts for a few selected hours and the cells are shaded according to the tip amount: higher tips have a darker shade.
 
 ```{r echo = F}
 #trip_data_hr_mon_df <- read.csv("data/nyc_tip_data_by_hr_mon_2019_long_format.csv")
@@ -229,7 +229,7 @@ trip_data_hr_mon_df %>%
   mutate(pu_hour = paste("Hour",pu_hour)) %>%
   gt(rowname_col = "pu_hour") %>% 
   tab_header(
-    title = html("<h3 align = 'left'>High Tip Amount Hours</h2>"),
+    title = html("<h3 align = 'left'>High Tip Amount Hours across Months</h2>"),
     subtitle = html("<h4 align = 'left' font-color = 'red'>We show average tip data only for those hours in the dataset which have the highest average tip amount in at least one of the 12 months</h4>")
   ) %>% 
   opt_table_outline(style = "none") %>% 
@@ -307,7 +307,7 @@ trip_data_hr_wday_df %>%
   mutate(pu_hour = paste("Hour",pu_hour)) %>%
   gt(rowname_col = "pu_hour") %>%
     tab_header(
-    title = html("<h3 align = 'left'>High Tip Amount Hours</h2>"),
+    title = html("<h3 align = 'left'>High Tip Amount Hours across Weekdays</h2>"),
     subtitle = html("<h4 align = 'left'>We show average tip data only for those hours in the dataset which have the highest average tip amount in at least one of the 7 days</h4>")
   ) %>% 
   opt_table_outline(style = "none") %>% 
@@ -376,7 +376,7 @@ Let's see if the type of trips undertaken between 5 am and 6 am are different.
 
 Perhaps the trips between 5 am and 6 am are longer trips; or perhaps these are
 trips to a different type of location. Airport trips are typically
-longer and they are a different type of destination. Let's split the data between Airport trips and non-Aiport trips and plot it by the hour.
+longer and they are a different type of destination. Let's split the data between Airport trips and non-Aiport trips and plot the average tip amount by the hour.
 
 ```{r echo = F, message = F}
 air_non_air_trips_df <- read_csv("data/all_airport_non_airport_trips.csv")
@@ -403,7 +403,7 @@ air_non_air_trips_df %>%
               vjust=-0.25) +
     scale_x_continuous(breaks = seq(0,23,1), labels = seq(0,23,1), expand = c(0, 0)) + 
     labs(x = "Hour of Day", y = "Average Tip Amount ($)",
-        title = "Average Tip Amount Variation by the hour and trip type",
+        title = "Average Tip Amount by the hour and trip type",
         subtitle = "Averaged across 84 million trips in 2019",
         caption = "Data Source: https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp") +
     theme(
@@ -426,7 +426,7 @@ air_non_air_trips_df %>%
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank(),
         legend.text = element_text(size = 10),
-        legend.title = element_text(size = 12),
+        legend.title = element_blank(),
         legend.background = element_rect(fill = 'cornsilk'),
         legend.key.size = unit(0.5,"cm"),
         legend.position = 'bottom'
@@ -442,7 +442,7 @@ air_non_air_trips_df %>%
 
 **What could be reason for this apparent anomaly ?**
 
-Perhaps there are more airport trips as compared to non-airport trips at 5 am that is pushing up the average. Let's check that.
+Perhaps there are more Airport trips as compared to non-Airport trips at 5 am that is pushing up the average. Let's check that.
 
 ```{r echo = F, message = F, fig.width=10,fig.height=6}
 library(scales)
@@ -487,7 +487,7 @@ air_non_air_trips_df %>%
         panel.grid.minor.x = element_blank(),
         panel.grid.major.x = element_blank(),
         legend.text = element_text(size = 10),
-        legend.title = element_text(size = 12),
+        legend.title = element_blank(),
         legend.background = element_rect(fill = 'cornsilk'),
         legend.key.size = unit(0.5,"cm"),
         legend.position = 'bottom'
@@ -592,4 +592,4 @@ However, New Yorkers are not really paying high tips for trips between 5 am and 
 
 Finally, it helps to look beyond a simple average. This is especially true when we are looking at large datasets.
 
-This blog post was created as a RMarkdown document, using [RStudio IDE](https://www.rstudio.com/products/rstudio/). All the plots were created using the ggplot2 R Package. The RMarkdown code for this post can be found [here](https://github.com/rnpythonblog/rnpython/blob/main/content/post/2021-06-15-high-taxi-tips-at-5-am/index.en.Rmarkdown). 
+*This blog post was created as a RMarkdown document, using [RStudio IDE](https://www.rstudio.com/products/rstudio/) and rendered using the [blogdown](https://bookdown.org/yihui/blogdown/) package. All the plots were created using the [ggplot2](https://ggplot2.tidyverse.org/) R Package and the data wrangling was done using the [tidyverse](https://www.tidyverse.org) packages. The RMarkdown code for this post can be found [here](https://github.com/rnpythonblog/rnpython/blob/main/content/post/2021-06-15-high-taxi-tips-at-5-am/index.en.Rmarkdown)*. 

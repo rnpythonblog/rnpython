@@ -8,7 +8,7 @@ categories:
 tags:
   - Analytics
 subtitle: "Why are taxi tips the highest at 5 am in the morning in New York"
-summary: "In this post, we analyze why the average tip is at the highest for taxi rides taken between 5 am and 6 am in the morning"
+summary: "In this post, we analyze why the average tip is at the highest for taxi rides taken between 5 am and 6 am in the morning. The analysis helps discover that tips are not really high, even though a simple average seems to suggest so."
 lastmod: '2021-06-15T10:34:50+05:30'
 featured: no
 image:
@@ -24,18 +24,18 @@ body {
 }
 </style>
 
-The NYC Taxi Trips dataset is quite popular, as evinced from a large number of blog posts. The dataset is available in the form of [CSV files](https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page), organized by month, from 2009 onwards. The CSV files contain anonymized information about each trip such as pickup and drop off time, pickup and drop off location, trip duration, fare amount and tip amount. It is often used to build models to predict tip amount for a taxi trip.
+The NYC Taxi Trips dataset is quite popular, as evinced from a large number of blog posts. The dataset is available in the form of [CSV files](https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page), organized by month, from 2009 onwards. Each entry in a CSV file contains anonymized information about a trip such as pickup and drop off time, pickup and drop off location, trip duration, fare amount and tip amount. This dataset is often used to build models to predict tip amount for a taxi trip.
 
-We will use data from 2019 to identify patterns of tipping behavior: for example, do tip amounts vary from morning, while going to work to evening, when going back home or perhaps going out. The raw data is available from this [NYC Open Data
+We will use data from 2019 to identify patterns of tipping behavior: for example, do tip amounts vary by the time of the day. Is the tip amount for taxi rides in the morning (while going to work, for example) much different from the tip amount for taxi rides in the evening? The raw data for the whole year is available from this [NYC Open Data
 page](2019%20Data:%20https://data.cityofnewyork.us/Transportation/2019-Yellow-Taxi-Trip-Data/2upf-qytp).
 
 There were \~84 million taxi trips in 2019, so this is best explored using a visualization. And the initial observation is quite surprising. The bar graph below tells us that the highest tip amounts are for trips between 5 am and 6 am.
 
 <img src="{{< blogdown/postref >}}index.en_files/figure-html/chnk1-1.png" width="75%" height="300px" style="float:right; padding:10px" />
 
-> Notice that the average tip amount for trips taken between 5 am and 6 am is the highest at \$2.4. The next highest is for trips between 4 pm and 5 pm at \$2.3.
+> The average tip amount for trips taken between 5 am and 6 am is the highest at \$2.4. The next highest is for trips between 4 pm and 5 pm at \$2.3.
 
-That is odd. Most people are in bed or are getting up at around 5 am. If you ask me if people would be sleepy at 5 am, I would say, yes. If you asked me if people are generous at 5 am, I wouldn’t know offhand. “Please look at data,” is the best I might be able to muster.
+That is odd. Most people are in bed or are getting up at around 5 am. If you ask me if people would be sleepy at 5 am, I would say, yes. If you asked me if people are generous at 5 am, I wouldn’t know offhand. “Please look at the data,” is the best I might be able to muster.
 
 Since we have some data, let’s see if it is of any help.
 
@@ -50,7 +50,7 @@ Since we do not have data about the passengers, we cannot investigate Option 1.
 Before we jump to conclusion about data quality, let’s drill down a bit
 further. There were \~84 million trips undertaken in 2019, which works out to about 3.5 million trips at each hour, on average. Thus, each bar represents the average tip across \~3.5 million trips. While the large number of trips will iron out any outliers, this is still a lot of trips The large size of data enables us to drill down further and explore patterns.
 
-Let’s split this data month wise and then let’s see the average tip amounts at all hours, for each month.
+Let’s split this data month wise and then let’s see the average tip amounts at each hour, for each month.
 
 <img src="{{< blogdown/postref >}}index.en_files/figure-html/unnamed-chunk-4-1.png" width="960" />
 
@@ -58,14 +58,14 @@ Let’s split this data month wise and then let’s see the average tip amounts 
 
 If we look closely, in January and March, the highest average tip is during the late hours of the day. But it is a tad difficult to make this out.
 
-Here is an alternate visualization: it shows the tip amounts for selected hours and the cells are shaded according to the tip amount: higher tips have a darker shade.
+Here is an alternate visualization: it shows the tip amounts for a few selected hours and the cells are shaded according to the tip amount: higher tips have a darker shade.
 
-<div id="mkkihrachn" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="ozkndmmmdl" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#mkkihrachn .gt_table {
+#ozkndmmmdl .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -90,7 +90,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-left-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_heading {
+#ozkndmmmdl .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -102,7 +102,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-right-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_title {
+#ozkndmmmdl .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -112,7 +112,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-bottom-width: 0;
 }
 
-#mkkihrachn .gt_subtitle {
+#ozkndmmmdl .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -122,13 +122,13 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-top-width: 0;
 }
 
-#mkkihrachn .gt_bottom_border {
+#ozkndmmmdl .gt_bottom_border {
   border-bottom-style: none;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_col_headings {
+#ozkndmmmdl .gt_col_headings {
   border-top-style: none;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -143,7 +143,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-right-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_col_heading {
+#ozkndmmmdl .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -163,7 +163,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   overflow-x: hidden;
 }
 
-#mkkihrachn .gt_column_spanner_outer {
+#ozkndmmmdl .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -175,15 +175,15 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   padding-right: 4px;
 }
 
-#mkkihrachn .gt_column_spanner_outer:first-child {
+#ozkndmmmdl .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#mkkihrachn .gt_column_spanner_outer:last-child {
+#ozkndmmmdl .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#mkkihrachn .gt_column_spanner {
+#ozkndmmmdl .gt_column_spanner {
   border-bottom-style: none;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -195,7 +195,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   width: 100%;
 }
 
-#mkkihrachn .gt_group_heading {
+#ozkndmmmdl .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -217,7 +217,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   vertical-align: middle;
 }
 
-#mkkihrachn .gt_empty_group_heading {
+#ozkndmmmdl .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -232,15 +232,15 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   vertical-align: middle;
 }
 
-#mkkihrachn .gt_from_md > :first-child {
+#ozkndmmmdl .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#mkkihrachn .gt_from_md > :last-child {
+#ozkndmmmdl .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#mkkihrachn .gt_row {
+#ozkndmmmdl .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -259,7 +259,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   overflow-x: hidden;
 }
 
-#mkkihrachn .gt_stub {
+#ozkndmmmdl .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -271,7 +271,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   padding-left: 12px;
 }
 
-#mkkihrachn .gt_summary_row {
+#ozkndmmmdl .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -281,7 +281,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   padding-right: 5px;
 }
 
-#mkkihrachn .gt_first_summary_row {
+#ozkndmmmdl .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -291,7 +291,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-top-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_grand_summary_row {
+#ozkndmmmdl .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -301,7 +301,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   padding-right: 5px;
 }
 
-#mkkihrachn .gt_first_grand_summary_row {
+#ozkndmmmdl .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -311,11 +311,11 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-top-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_striped {
+#ozkndmmmdl .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#mkkihrachn .gt_table_body {
+#ozkndmmmdl .gt_table_body {
   border-top-style: none;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -324,7 +324,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-bottom-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_footnotes {
+#ozkndmmmdl .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -338,13 +338,13 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-right-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_footnote {
+#ozkndmmmdl .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#mkkihrachn .gt_sourcenotes {
+#ozkndmmmdl .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -358,41 +358,41 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
   border-right-color: #D3D3D3;
 }
 
-#mkkihrachn .gt_sourcenote {
+#ozkndmmmdl .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#mkkihrachn .gt_left {
+#ozkndmmmdl .gt_left {
   text-align: left;
 }
 
-#mkkihrachn .gt_center {
+#ozkndmmmdl .gt_center {
   text-align: center;
 }
 
-#mkkihrachn .gt_right {
+#ozkndmmmdl .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#mkkihrachn .gt_font_normal {
+#ozkndmmmdl .gt_font_normal {
   font-weight: normal;
 }
 
-#mkkihrachn .gt_font_bold {
+#ozkndmmmdl .gt_font_bold {
   font-weight: bold;
 }
 
-#mkkihrachn .gt_font_italic {
+#ozkndmmmdl .gt_font_italic {
   font-style: italic;
 }
 
-#mkkihrachn .gt_super {
+#ozkndmmmdl .gt_super {
   font-size: 65%;
 }
 
-#mkkihrachn .gt_footnote_marks {
+#ozkndmmmdl .gt_footnote_marks {
   font-style: italic;
   font-weight: normal;
   font-size: 65%;
@@ -401,7 +401,7 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
 <table class="gt_table">
   <thead class="gt_header">
     <tr>
-      <th colspan="13" class="gt_heading gt_title gt_font_normal" style><h3 align = 'left'>High Tip Amount Hours</h2></th>
+      <th colspan="13" class="gt_heading gt_title gt_font_normal" style><h3 align = 'left'>High Tip Amount Hours across Months</h2></th>
     </tr>
     <tr>
       <th colspan="13" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style><h4 align = 'left' font-color = 'red'>We show average tip data only for those hours in the dataset which have the highest average tip amount in at least one of the 12 months</h4></th>
@@ -489,12 +489,12 @@ Here is an alternate visualization: it shows the tip amounts for selected hours 
 
 Let check if this pattern also holds out across days.
 
-<div id="uofxjwfjmq" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="kfenifgkho" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#uofxjwfjmq .gt_table {
+#kfenifgkho .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -519,7 +519,7 @@ Let check if this pattern also holds out across days.
   border-left-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_heading {
+#kfenifgkho .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -531,7 +531,7 @@ Let check if this pattern also holds out across days.
   border-right-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_title {
+#kfenifgkho .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -541,7 +541,7 @@ Let check if this pattern also holds out across days.
   border-bottom-width: 0;
 }
 
-#uofxjwfjmq .gt_subtitle {
+#kfenifgkho .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -551,13 +551,13 @@ Let check if this pattern also holds out across days.
   border-top-width: 0;
 }
 
-#uofxjwfjmq .gt_bottom_border {
+#kfenifgkho .gt_bottom_border {
   border-bottom-style: none;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_col_headings {
+#kfenifgkho .gt_col_headings {
   border-top-style: none;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -572,7 +572,7 @@ Let check if this pattern also holds out across days.
   border-right-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_col_heading {
+#kfenifgkho .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -592,7 +592,7 @@ Let check if this pattern also holds out across days.
   overflow-x: hidden;
 }
 
-#uofxjwfjmq .gt_column_spanner_outer {
+#kfenifgkho .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -604,15 +604,15 @@ Let check if this pattern also holds out across days.
   padding-right: 4px;
 }
 
-#uofxjwfjmq .gt_column_spanner_outer:first-child {
+#kfenifgkho .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#uofxjwfjmq .gt_column_spanner_outer:last-child {
+#kfenifgkho .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#uofxjwfjmq .gt_column_spanner {
+#kfenifgkho .gt_column_spanner {
   border-bottom-style: none;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -624,7 +624,7 @@ Let check if this pattern also holds out across days.
   width: 100%;
 }
 
-#uofxjwfjmq .gt_group_heading {
+#kfenifgkho .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -646,7 +646,7 @@ Let check if this pattern also holds out across days.
   vertical-align: middle;
 }
 
-#uofxjwfjmq .gt_empty_group_heading {
+#kfenifgkho .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -661,15 +661,15 @@ Let check if this pattern also holds out across days.
   vertical-align: middle;
 }
 
-#uofxjwfjmq .gt_from_md > :first-child {
+#kfenifgkho .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#uofxjwfjmq .gt_from_md > :last-child {
+#kfenifgkho .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#uofxjwfjmq .gt_row {
+#kfenifgkho .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -688,7 +688,7 @@ Let check if this pattern also holds out across days.
   overflow-x: hidden;
 }
 
-#uofxjwfjmq .gt_stub {
+#kfenifgkho .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -700,7 +700,7 @@ Let check if this pattern also holds out across days.
   padding-left: 12px;
 }
 
-#uofxjwfjmq .gt_summary_row {
+#kfenifgkho .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -710,7 +710,7 @@ Let check if this pattern also holds out across days.
   padding-right: 5px;
 }
 
-#uofxjwfjmq .gt_first_summary_row {
+#kfenifgkho .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -720,7 +720,7 @@ Let check if this pattern also holds out across days.
   border-top-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_grand_summary_row {
+#kfenifgkho .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -730,7 +730,7 @@ Let check if this pattern also holds out across days.
   padding-right: 5px;
 }
 
-#uofxjwfjmq .gt_first_grand_summary_row {
+#kfenifgkho .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -740,11 +740,11 @@ Let check if this pattern also holds out across days.
   border-top-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_striped {
+#kfenifgkho .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#uofxjwfjmq .gt_table_body {
+#kfenifgkho .gt_table_body {
   border-top-style: none;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -753,7 +753,7 @@ Let check if this pattern also holds out across days.
   border-bottom-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_footnotes {
+#kfenifgkho .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -767,13 +767,13 @@ Let check if this pattern also holds out across days.
   border-right-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_footnote {
+#kfenifgkho .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#uofxjwfjmq .gt_sourcenotes {
+#kfenifgkho .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -787,41 +787,41 @@ Let check if this pattern also holds out across days.
   border-right-color: #D3D3D3;
 }
 
-#uofxjwfjmq .gt_sourcenote {
+#kfenifgkho .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#uofxjwfjmq .gt_left {
+#kfenifgkho .gt_left {
   text-align: left;
 }
 
-#uofxjwfjmq .gt_center {
+#kfenifgkho .gt_center {
   text-align: center;
 }
 
-#uofxjwfjmq .gt_right {
+#kfenifgkho .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#uofxjwfjmq .gt_font_normal {
+#kfenifgkho .gt_font_normal {
   font-weight: normal;
 }
 
-#uofxjwfjmq .gt_font_bold {
+#kfenifgkho .gt_font_bold {
   font-weight: bold;
 }
 
-#uofxjwfjmq .gt_font_italic {
+#kfenifgkho .gt_font_italic {
   font-style: italic;
 }
 
-#uofxjwfjmq .gt_super {
+#kfenifgkho .gt_super {
   font-size: 65%;
 }
 
-#uofxjwfjmq .gt_footnote_marks {
+#kfenifgkho .gt_footnote_marks {
   font-style: italic;
   font-weight: normal;
   font-size: 65%;
@@ -830,7 +830,7 @@ Let check if this pattern also holds out across days.
 <table class="gt_table">
   <thead class="gt_header">
     <tr>
-      <th colspan="8" class="gt_heading gt_title gt_font_normal" style><h3 align = 'left'>High Tip Amount Hours</h2></th>
+      <th colspan="8" class="gt_heading gt_title gt_font_normal" style><h3 align = 'left'>High Tip Amount Hours across Weekdays</h2></th>
     </tr>
     <tr>
       <th colspan="8" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style><h4 align = 'left'>We show average tip data only for those hours in the dataset which have the highest average tip amount in at least one of the 7 days</h4></th>
@@ -897,7 +897,7 @@ Let’s see if the type of trips undertaken between 5 am and 6 am are different.
 
 Perhaps the trips between 5 am and 6 am are longer trips; or perhaps these are
 trips to a different type of location. Airport trips are typically
-longer and they are a different type of destination. Let’s split the data between Airport trips and non-Aiport trips and plot it by the hour.
+longer and they are a different type of destination. Let’s split the data between Airport trips and non-Aiport trips and plot the average tip amount by the hour.
 
 <img src="{{< blogdown/postref >}}index.en_files/figure-html/unnamed-chunk-8-1.png" width="960" />
 
@@ -909,7 +909,7 @@ longer and they are a different type of destination. Let’s split the data betw
 
 **What could be reason for this apparent anomaly ?**
 
-Perhaps there are more airport trips as compared to non-airport trips at 5 am that is pushing up the average. Let’s check that.
+Perhaps there are more Airport trips as compared to non-Airport trips at 5 am that is pushing up the average. Let’s check that.
 
 <img src="{{< blogdown/postref >}}index.en_files/figure-html/unnamed-chunk-9-1.png" width="960" />
 
@@ -966,4 +966,4 @@ However, New Yorkers are not really paying high tips for trips between 5 am and 
 
 Finally, it helps to look beyond a simple average. This is especially true when we are looking at large datasets.
 
-This blog post was created as a RMarkdown document, using [RStudio IDE](https://www.rstudio.com/products/rstudio/). All the plots were created using the ggplot2 R Package. The RMarkdown code for this post can be found [here](https://github.com/rnpythonblog/rnpython/blob/main/content/post/2021-06-15-high-taxi-tips-at-5-am/index.en.Rmarkdown).
+*This blog post was created as a RMarkdown document, using [RStudio IDE](https://www.rstudio.com/products/rstudio/) and rendered using the [blogdown](https://bookdown.org/yihui/blogdown/) package. All the plots were created using the [ggplot2](https://ggplot2.tidyverse.org/) R Package and the data wrangling was done using the [tidyverse](https://www.tidyverse.org) packages. The RMarkdown code for this post can be found [here](https://github.com/rnpythonblog/rnpython/blob/main/content/post/2021-06-15-high-taxi-tips-at-5-am/index.en.Rmarkdown)*.
