@@ -36,9 +36,11 @@ superuser: true
 title: Manohar Mulchandani
 ---
 
-Manohar Mulchandani is a Data Scientist, Analyst Data Engineer, depending on the nature of the project. He would like to make Data Analytics, and in general, Programming accessible to everyone.
+Manohar Mulchandani consults and assists organizations to help them harness the potential of data. He has successfully helped clients build and deploy Machine Learning models in production, and assisted them with the attendant Digital Transformation. 
 
-He has with over 20 years of experience, leading teams to successfully execute and deploy, business critical IT projects to global clients.
+In his previous avatar, he lead teams in successfully executing and deploying business critical IT projects to global clients in different industries.
 
-He has successfully executed Digital Transformation projects for clients. He has also successfully help clients develop and deploy Machine Learning models.
+He hopes to use his IT experience and his knowledge of the data science eco-system to make programming and data science  accessible to everyone. To that end, he has made a modest beginning by creating online courses on [Coursera](https://www.coursera.org). The initial courses are aimed at making programming more accessible and these courses can be found under the **My Courses** tab.
+
+
 
